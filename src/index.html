@@ -13,6 +13,17 @@
                 margin: 0;
                 padding: 0;
                 font-family: vectorFont;
+                background-color: #111;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #gameContainer {
+                width: 640px;
+                height: 724px;
+                position: absolute;
+                top: calc(50% - 364px);
             }
 
             canvas {
@@ -45,9 +56,10 @@
             }
 
             p {
-                margin-top: 90px;
+                margin-top: 120px;
                 margin-left: 10px;
                 font-family: 'Courier New', Courier, monospace;
+                color: white;
             }
 
             #controlBar {
@@ -104,28 +116,30 @@
         </style>
     </head>
     <body>
-        <canvas id="gameCanvas" width="640" height="640"></canvas>
+        <div id="gameContainer">
+            <canvas id="gameCanvas" width="640" height="640"></canvas>
 
-        <div id="playOverlay" class="playOverlay">
-            <button onclick="startGame(); document.getElementById('playOverlay').style.display = 'none'">
-                <span class="blink">INSERT COIN</span>
-            </button>
+            <div id="playOverlay" class="playOverlay">
+                <button onclick="startGame(); document.getElementById('playOverlay').style.display = 'none'">
+                    <span class="blink">INSERT COIN</span>
+                </button>
+            </div>
+
+            <div id="controlBar">
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;SCORE:</span>
+                <span id="score">0</span>
+                <button id="soundToggleBtn" class="soundOn" onclick="toggleSound()"></button>
+                <br/>
+                <span>HIGHSCORE:</span>
+                <span id="highscore">0</span>
+            </div>
+
+            <p>
+                Use arrow keys or WASD to move and Space to shoot.<br/>
+                You can use a gamepad as well.<br/><br/>
+                Made by Sennio in 2023
+            </p>
         </div>
-
-        <div id="controlBar">
-            <span>&nbsp;&nbsp;&nbsp;&nbsp;SCORE:</span>
-            <span id="score">0</span>
-            <button id="soundToggleBtn" class="soundOn" onclick="toggleSound()"></button>
-            <br/>
-            <span>HIGHSCORE:</span>
-            <span id="highscore">0</span>
-        </div>
-
-        <p>
-            Use arrow keys or WASD to move and Space to shoot.<br/>
-            You can use a gamepad as well.<br/><br/>
-            Made by Sennio in 2023
-        </p>
 
         <script type="text/javascript" src="vector.js"></script>
         <script type="text/javascript" src="particles.js"></script>
