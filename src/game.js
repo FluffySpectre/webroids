@@ -77,13 +77,12 @@ const initInput = () => {
 const initGame = () => {
     loadHighscore();
     initBackgroundStars();
+    initInput();
     ship = new Ship(gameCanvas.width / 2, gameCanvas.height / 2, true);
     setInterval(gameLoop, 1000 / fps);
 };
 
 const startGame = () => {
-    initInput();
-
     sfxClips = {
         coin: loadAudioClip("assets/coin.wav"),
         shoot: loadAudioClip("assets/shoot.wav"),
@@ -114,6 +113,14 @@ const gameLoop = () => {
 };
 
 const updateGame = () => {
+    if (gameState === "menu") {
+        if (inputs.fire) {
+            startGame();
+            document.getElementById('playOverlay').style.display = "none";
+            return;
+        }
+    }
+
     // remove dead objects
     rockets = rockets.filter(r => r.isAlive());
     enemies = enemies.filter(d => d.isAlive());
