@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asteroids Remake</title>
+
+        <style>
+            @font-face {
+                font-family: vectorFont;
+                src: url(assets/HyperspaceBold-GM0g.ttf);
+            }
+
+            html, body {
+                margin: 0;
+                padding: 0;
+                font-family: vectorFont;
+            }
+
+            canvas {
+                background-color: black;
+            }
+
+            .playOverlay {
+                width: 640px;
+                height: 640px;
+                position: absolute;
+                top: 0;
+                left: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            button {
+                width: 20rem;
+                height: 4rem;
+                font-size: 2rem;
+                font-family: vectorFont;
+                cursor: pointer;
+                color: white;
+                background-color: black;
+                border: 2px solid white;
+            }
+            button:active {
+                background-color: #222;
+            }
+
+            p {
+                margin-top: 90px;
+                margin-left: 10px;
+                font-family: 'Courier New', Courier, monospace;
+            }
+
+            #controlBar {
+                position: absolute;
+                top: 640px;
+                background-color: #222;
+                width: 640px;
+                height: 84px;
+            }
+
+            #controlBar > button {
+                width: 48px;
+                height: 48px;
+            }
+            #controlBar > button.soundOn {
+                background: url(assets/sound_on.png);
+                background-size: 60%;
+                background-repeat: no-repeat;
+                background-position: center;
+                position: absolute;
+                right: 0;
+            }
+            #controlBar > button.soundOff {
+                background: url(assets/sound_off.png);
+                background-size: 60%;
+                background-repeat: no-repeat;
+                background-position: center;
+                position: absolute;
+                right: 0;
+            }
+
+            #controlBar > span {
+                font-size: 2rem;
+                color: white;
+                top: 1px;
+                left: 10px;
+                position: relative;
+            }
+
+            .blink {
+                animation: blink-animation 1s steps(5, start) infinite;
+                -webkit-animation: blink-animation 1s steps(5, start) infinite;
+            }
+            @keyframes blink-animation {
+                to {
+                    visibility: hidden;
+                }
+            }
+            @-webkit-keyframes blink-animation {
+                to {
+                    visibility: hidden;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="gameCanvas" width="640" height="640"></canvas>
+
+        <div id="playOverlay" class="playOverlay">
+            <button onclick="startGame(); document.getElementById('playOverlay').style.display = 'none'">
+                <span class="blink">INSERT COIN</span>
+            </button>
+        </div>
+
+        <div id="controlBar">
+            <span>&nbsp;&nbsp;&nbsp;&nbsp;SCORE:</span>
+            <span id="score">0</span>
+            <button id="soundToggleBtn" class="soundOn" onclick="toggleSound()"></button>
+            <br/>
+            <span>HIGHSCORE:</span>
+            <span id="highscore">0</span>
+        </div>
+
+        <p>
+            Use arrow keys or WASD to move and Space to shoot.<br/>
+            You can use a gamepad as well.<br/><br/>
+            Made by Sennio in 2023
+        </p>
+
+        <script type="text/javascript" src="vector.js"></script>
+        <script type="text/javascript" src="particles.js"></script>
+        <script type="text/javascript" src="asteroid.js"></script>
+        <script type="text/javascript" src="rocket.js"></script>
+        <script type="text/javascript" src="ufo.js"></script>
+        <script type="text/javascript" src="ship.js"></script>
+        <script type="text/javascript" src="game.js"></script>
+    </body>
+</html>
