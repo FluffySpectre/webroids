@@ -30,12 +30,26 @@
                 background-color: black;
             }
 
-            .playOverlay {
+            .overlay {
                 width: 640px;
                 height: 640px;
                 position: absolute;
                 top: 0;
                 left: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            #gameOverOverlay {
+                display: none;
+            }
+            #gameOverOverlay > div {
+                width: 100%;
+                height: 4rem;
+                font-size: 2rem;
+                font-family: vectorFont;
+                color: white;
+                background-color: black;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -60,6 +74,21 @@
                 margin-left: 10px;
                 font-family: 'Courier New', Courier, monospace;
                 color: white;
+            }
+
+            #lifesContainer {
+                position: absolute;
+                top: 10px;
+                left: 5px;
+                width: 96px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+            }
+            #lifesContainer > img {
+                width: 32px;
+                height: 48px;
+                display: none;
             }
 
             #controlBar {
@@ -119,10 +148,22 @@
         <div id="gameContainer">
             <canvas id="gameCanvas" width="640" height="640"></canvas>
 
-            <div id="playOverlay" class="playOverlay">
+            <div id="playOverlay" class="overlay">
                 <button onclick="startGame(); document.getElementById('playOverlay').style.display = 'none'">
                     <span class="blink">INSERT COIN</span>
                 </button>
+            </div>
+
+            <div id="gameOverOverlay" class="overlay">
+                <div>
+                    <span>GAME OVER</span>
+                </div>
+            </div>
+
+            <div id="lifesContainer">
+                <img id="life1" src="assets/life.png" />
+                <img id="life2" src="assets/life.png" />
+                <img id="life3" src="assets/life.png" />
             </div>
 
             <div id="controlBar">

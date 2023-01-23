@@ -3,6 +3,13 @@ const gameCanvasContext = gameCanvas.getContext("2d");
 const scoreText = document.getElementById("score");
 const highscoreText = document.getElementById("highscore");
 const soundToggleBtn = document.getElementById("soundToggleBtn");
+const lifesElements = [
+    document.getElementById("life1"),
+    document.getElementById("life2"),
+    document.getElementById("life3")
+];
+const playOverlay = document.getElementById("playOverlay");
+const gameOverOverlay = document.getElementById("gameOverOverlay");
 
 const fps = 60;
 let frameCount = 0;
@@ -26,6 +33,7 @@ let ufoSpawnCooldown = 0, ufoSpawnDelayMin = fps * 20, ufoSpawnDelayMax = fps * 
 let enemies = [];
 let numUFOs = 0;
 let numAsteroids = 0;
+let lifes = 3;
 
 const loadHighscore = () => {
     highscore = localStorage.getItem("highscore") || 0;
@@ -66,7 +74,23 @@ const stopSound = (clipName) => {
 
 const addScore = (scoreToAdd) => {
     score += scoreToAdd;
+    updateScoreDisplay();
+};
+
+const updateScoreDisplay = () => {
     scoreText.innerHTML = score;
+};
+
+const updateLifesDisplay = () => {
+    if (lifes >= 0) {
+        for (let i = 0; i < 3; i++) {
+            if (i < lifes) {
+                lifesElements[i].style.display = "inline";
+            } else {
+                lifesElements[i].style.display = "none";
+            }
+        }
+    }
 };
 
 const initInput = () => {
@@ -98,6 +122,12 @@ const startGame = () => {
 
     ufoSpawnCooldown = fps * 60;
 
+    score = 0;
+    updateScoreDisplay();
+    
+    lifes = 3;
+    updateLifesDisplay();
+
     gameState = "game";
 
     playSound("coin");
@@ -116,7 +146,7 @@ const updateGame = () => {
     if (gameState === "menu") {
         if (inputs.fire) {
             startGame();
-            document.getElementById('playOverlay').style.display = "none";
+            document.getElementById("playOverlay").style.display = "none";
             return;
         }
     }
@@ -325,8 +355,6 @@ const spawnUFO = () => {
 };
 
 const shipDied = () => {
-    console.log("Ship died!");
-
     // spawn an explosion at the ships position
     const explosion = new ParticleSystem(ship.x, ship.y);
     for (let i = 0; i < 3; i++) {
@@ -338,9 +366,31 @@ const shipDied = () => {
 
     ship.die();
 
+    lifes--;
+    updateLifesDisplay();
+    if (lifes > 0) {
+        setTimeout(() => {
+            ship.reset();
+            ship.beInvincible();
+        }, 1000);
+    } else {
+        lifes = 0;
+        gameOver();
+    }
+};
+
+const gameOver = () => {
     setTimeout(() => {
         ship.reset();
-        ship.beInvincible();
+        ship.disabled = true;
+
+        gameOverOverlay.style.display = "flex";
+
+        setTimeout(() => {
+            gameOverOverlay.style.display = "none";
+            playOverlay.style.display = "flex";
+            gameState = "menu";
+        }, 3000);
     }, 1000);
 };
 
