@@ -114,6 +114,7 @@ const startGame = () => {
         shipExplosion: loadAudioClip("assets/ship_explosion.wav"),
         ufoExplosion: loadAudioClip("assets/ufo_explosion.wav"),
         asteroidExplosion: loadAudioClip("assets/asteroid_explosion.wav"),
+        gameOver: loadAudioClip("assets/gameover_2.wav"),
         // ufoFlying: loadAudioClip("assets/ufo_flying_2.wav"),
     };
 
@@ -381,6 +382,8 @@ const shipDied = () => {
 
 const gameOver = () => {
     setTimeout(() => {
+        playSound("gameOver");
+
         ship.reset();
         ship.disabled = true;
 
