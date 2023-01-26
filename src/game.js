@@ -121,7 +121,7 @@ const startGame = () => {
     ship.reset();
     ship.beInvincible();
 
-    ufoSpawnCooldown = fps * 60;
+    ufoSpawnCooldown = frameCount + (ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax);
 
     score = 0;
     updateScoreDisplay();
@@ -134,7 +134,7 @@ const startGame = () => {
     playSound("coin");
 };
 
-const gameLoop = () => {
+const gameLoop = () => {    
     frameCount++;
     handleGamepadInput();
     calculateMovementInputs();
