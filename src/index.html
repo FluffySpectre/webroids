@@ -40,6 +40,9 @@
                 align-items: center;
                 justify-content: center;
             }
+            #pauseOverlay {
+                display: none;
+            }
             #gameOverOverlay {
                 display: none;
             }
@@ -154,6 +157,12 @@
                 </button>
             </div>
 
+            <div id="pauseOverlay" class="overlay">
+                <button onclick="togglePause()">
+                    <span class="blink">PAUSE</span>
+                </button>
+            </div>
+
             <div id="gameOverOverlay" class="overlay">
                 <div>
                     <span>GAME OVER</span>
@@ -176,7 +185,7 @@
             </div>
 
             <p>
-                Use arrow keys or WASD to move and Space to shoot.<br/>
+                Use arrow keys or WASD to move, Space to shoot and P to pause the game.<br/>
                 You can use a gamepad as well.<br/><br/>
                 Made by Sennio in 2023
             </p>

@@ -9,16 +9,17 @@ const lifesElements = [
     document.getElementById("life3")
 ];
 const playOverlay = document.getElementById("playOverlay");
+const pauseOverlay = document.getElementById("pauseOverlay");
 const gameOverOverlay = document.getElementById("gameOverOverlay");
 
 const fps = 60;
 let frameCount = 0;
 
-let gameState = "menu"; // game, gameover
+let gameState = "menu"; // game, gameover, pause
 let sfxClips = {};
 let soundOn = true;
 let score = 0, highscore = 0;
-let inputs = { left: false, right: false, up: false, fire: false };
+let inputs = { left: false, right: false, up: false, fire: false, pause: { pressed: false, down: false } };
 let inputHorizontal = 0, inputVertical = 0;
 let bgStars = [];
 let ship;
@@ -134,13 +135,31 @@ const startGame = () => {
     playSound("coin");
 };
 
-const gameLoop = () => {    
-    frameCount++;
+const togglePause = () => {
+    if (gameState === "game") {
+        gameState = "pause";
+        pauseOverlay.style.display = "flex";
+    } else if (gameState === "pause") {
+        gameState = "game";
+        pauseOverlay.style.display = "none";
+    }
+};
+
+const gameLoop = () => {   
     handleGamepadInput();
     calculateMovementInputs();
-    updateGame();
-    drawGame();
-    updateHighscore();
+
+    if (inputs.pause.down) { togglePause(); }
+    
+    if (gameState !== "pause") {
+        frameCount++;
+
+        updateGame();
+        drawGame();
+        updateHighscore();
+    }
+
+    resetFrameInputs();
 };
 
 const updateGame = () => {
@@ -262,6 +281,11 @@ const handleKeydown = (event) => {
     if (keyCode === "Space") {
         inputs.fire = true;
     }
+
+    if (keyCode === "KeyP") {
+        inputs.pause.down = !inputs.pause.pressed ? true : false;
+        inputs.pause.pressed = true;
+    }
 };
 
 const handleKeyup = (event) => {
@@ -281,6 +305,11 @@ const handleKeyup = (event) => {
     if (keyCode === "Space") {
         inputs.fire = false;
     }
+
+    if (keyCode === "KeyP") {
+        inputs.pause.down = false;
+        inputs.pause.pressed = false;
+    }
 };
 
 const handleGamepadInput = () => {
@@ -295,14 +324,21 @@ const handleGamepadInput = () => {
     const leftDpad = usedGamepad.buttons[14];
     const rightDpad = usedGamepad.buttons[15];
     const aButton = usedGamepad.buttons[1];
+    const startButton = usedGamepad.buttons[9];
 
     // map the inputs
     inputs.up = upDpad.pressed;
     inputs.left = leftDpad.pressed;
     inputs.right = rightDpad.pressed;
     inputs.fire = aButton.pressed;
+    inputs.pause.down = !inputs.pause.pressed ? startButton.pressed : false;
+    inputs.pause.pressed = startButton.pressed;
 
     // console.log("Button value: " + button.value);
+};
+
+resetFrameInputs = () => {
+    inputs.pause.down = false;
 };
 
 const calculateMovementInputs = () => {
@@ -381,6 +417,8 @@ const shipDied = () => {
 };
 
 const gameOver = () => {
+    gameState = "gameover";
+
     setTimeout(() => {
         playSound("gameOver");
 
@@ -390,6 +428,7 @@ const gameOver = () => {
         gameOverOverlay.style.display = "flex";
 
         setTimeout(() => {
+            pauseOverlay.style.display = "none";
             gameOverOverlay.style.display = "none";
             playOverlay.style.display = "flex";
             gameState = "menu";
