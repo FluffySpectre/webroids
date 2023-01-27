@@ -63,7 +63,7 @@ const loadAudioClip = (fileURL) => {
 const playSound = (clipName, loop = false) => {
     if (soundOn && sfxClips[clipName]) {
         sfxClips[clipName].loop = loop;
-        sfxClips[clipName].play();
+        sfxClips[clipName].play().catch(() => {});
     }
 };
 
@@ -109,6 +109,8 @@ const initGame = () => {
 
 const startGame = () => {
     sfxClips = {
+        pauseIn: loadAudioClip("assets/pause_in.wav"),
+        pauseOut: loadAudioClip("assets/pause_out.wav"),
         coin: loadAudioClip("assets/coin.wav"),
         shoot: loadAudioClip("assets/shoot.wav"),
         ufoShoot: loadAudioClip("assets/shoot.wav"),
@@ -139,9 +141,11 @@ const togglePause = () => {
     if (gameState === "game") {
         gameState = "pause";
         pauseOverlay.style.display = "flex";
+        playSound("pauseIn");
     } else if (gameState === "pause") {
         gameState = "game";
         pauseOverlay.style.display = "none";
+        playSound("pauseOut");
     }
 };
 
