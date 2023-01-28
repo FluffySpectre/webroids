@@ -16,7 +16,7 @@ const fps = 60;
 let frameCount = 0;
 
 let gameState = "menu"; // game, gameover, pause
-let soundFX = new SoundFX();
+let soundFX;
 let score = 0, highscore = 0;
 let inputs = { left: false, right: false, up: false, fire: false, pause: { pressed: false, down: false } };
 let inputHorizontal = 0, inputVertical = 0;
@@ -79,30 +79,32 @@ const initInput = () => {
     window.addEventListener("keyup", handleKeyup);
 };
 
+const initSoundFX = () => {
+    soundFX = new SoundFX();
+    soundFX.loadSFXClips({
+        pauseIn: "assets/pause_in.mp3",
+        pauseOut: "assets/pause_out.mp3",
+        coin: "assets/coin.mp3",
+        shoot: "assets/shoot.mp3",
+        ufoShoot: "assets/shoot.mp3",
+        shipExplosion: "assets/ship_explosion.mp3",
+        ufoExplosion: "assets/ufo_explosion.mp3",
+        asteroidExplosion: "assets/asteroid_explosion.mp3",
+        gameOver: "assets/gameover_2.mp3",
+        // ufoFlying: "assets/ufo_flying_2.wav",
+    });
+};
+
 const initGame = () => {
     loadHighscore();
     initBackgroundStars();
     initInput();
+    initSoundFX();
     ship = new Ship(gameCanvas.width / 2, gameCanvas.height / 2, true);
     setInterval(gameLoop, 1000 / fps);
 };
 
 const startGame = () => {
-    if (!soundFX.clipsLoaded) {
-        soundFX.loadSFXClips({
-            pauseIn: "assets/pause_in.mp3",
-            pauseOut: "assets/pause_out.mp3",
-            coin: "assets/coin.mp3",
-            shoot: "assets/shoot.mp3",
-            ufoShoot: "assets/shoot.mp3",
-            shipExplosion: "assets/ship_explosion.mp3",
-            ufoExplosion: "assets/ufo_explosion.mp3",
-            asteroidExplosion: "assets/asteroid_explosion.mp3",
-            gameOver: "assets/gameover_2.mp3",
-            // ufoFlying: "assets/ufo_flying_2.wav",
-        });
-    }
-
     ship.reset();
     ship.beInvincible();
 
