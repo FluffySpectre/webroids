@@ -1,16 +1,12 @@
 class Ship {
     constructor(startX, startY, disabled) {
-        this.startX = startX;
-        this.startY = startY;
-        this.x = startX;
-        this.y = startY;
+        this.startPosition = new Vector(startX, startY);
+        this.position = new Vector(startX, startY);
         this.angle = 0;
         this.moveSpeed = 0.15;
         this.rotationSpeed = 3;
-        this.accX = 0;
-        this.accY = 0;
-        this.velX = 0;
-        this.velY = 0;
+        this.acceleration = new Vector();
+        this.velocity = new Vector();
         this.friction = 0.02;
         this.inputVertical = 0;
         this.size = 20;
@@ -25,13 +21,10 @@ class Ship {
     }
 
     reset() {
-        this.x = this.startX;
-        this.y = this.startY;
+        this.position = this.startPosition.copy();
+        this.acceleration.mult(0);
+        this.velocity.mult(0);
         this.angle = 0;
-        this.accX = 0;
-        this.accY = 0;
-        this.velX = 0;
-        this.velY = 0;
         this.dead = false;
         this.flicker = true;
         this.disabled = false;
@@ -54,19 +47,14 @@ class Ship {
         this.inputVertical = inputVertical;
         this.angle += inputHorizontal * this.rotationSpeed;
 
-        const dirVectorX = Math.cos((this.angle - 90) * Deg2Rad);
-        const dirVectorY = Math.sin((this.angle - 90) * Deg2Rad);
-
-        const magnitude = Math.sqrt(dirVectorX * dirVectorX + dirVectorY * dirVectorY);
-        const unitVectorX = dirVectorX / magnitude;
-        const unitVectorY = dirVectorY / magnitude;
-
-        this.accX = inputVertical * unitVectorX * this.moveSpeed;
-        this.accY = inputVertical * unitVectorY * this.moveSpeed;
+        const direction = new Vector(Math.cos((this.angle - 90) * Deg2Rad), Math.sin((this.angle - 90) * Deg2Rad));
+        this.acceleration = direction.normalize();
+        this.acceleration.mult(inputVertical);
+        this.acceleration.mult(this.moveSpeed);
     }
 
     shootRocket() {
-        const r = new Rocket(this.x, this.y, 8, this.angle);
+        const r = new Rocket(this.position.x, this.position.y, 8, this.angle);
         return r;
     }
 
@@ -77,16 +65,12 @@ class Ship {
             this.invincible = false;
         }
 
-        this.velX += this.accX;
-        this.velY += this.accY;
-        this.velX *= 1 - this.friction;
-        this.velY *= 1 - this.friction;
+        this.velocity.add(this.acceleration);
+        this.velocity.mult(1 - this.friction);
+        this.position.add(this.velocity);
 
-        this.x += this.velX;
-        this.y += this.velY;
-
-        this.accX = 0;
-        this.accY = 0;
+        // reset acceleration
+        this.acceleration.mult(0);
 
         this.checkBounds();
     }
@@ -96,7 +80,7 @@ class Ship {
 
         ctx.save();
 
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.position.x, this.position.y);
 
         ctx.scale(2, 2);
         ctx.rotate(this.angle * Deg2Rad);
@@ -140,10 +124,10 @@ class Ship {
 
     checkBounds() {
         const collisionDiameter = this.collisionRadius * 2;
-        if (this.x < 0 - collisionDiameter) this.x = gameCanvas.width + collisionDiameter;
-        else if (this.x > gameCanvas.width + collisionDiameter) this.x = 0 - collisionDiameter;
+        if (this.position.x < 0 - collisionDiameter) this.position.x = gameCanvas.width + collisionDiameter;
+        else if (this.position.x > gameCanvas.width + collisionDiameter) this.position.x = 0 - collisionDiameter;
 
-        if (this.y < 0 - collisionDiameter) this.y = gameCanvas.height + collisionDiameter;
-        else if (this.y > gameCanvas.height + collisionDiameter) this.y = 0 - collisionDiameter;
+        if (this.position.y < 0 - collisionDiameter) this.position.y = gameCanvas.height + collisionDiameter;
+        else if (this.position.y > gameCanvas.height + collisionDiameter) this.position.y = 0 - collisionDiameter;
     }
 }

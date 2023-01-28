@@ -1,7 +1,6 @@
 class UFO {
     constructor(startX, startY, size) {
-        this.x = startX;
-        this.y = startY;
+        this.position = new Vector(startX, startY);
         this.size = size;
         this.collisionRadius = this.size * 2.5;
         this.dir = 1;
@@ -27,7 +26,7 @@ class UFO {
     }
 
     update() {
-        this.x += this.dir * this.speed;
+        this.position.x += this.dir * this.speed;
 
         this.shooting();
 
@@ -36,7 +35,7 @@ class UFO {
 
     draw(ctx) {
         ctx.save();
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.position.x, this.position.y);
         ctx.scale(this.size, this.size);
         ctx.fillStyle = "black";
         ctx.strokeStyle = "white";
@@ -72,29 +71,29 @@ class UFO {
             this.shootCooldown = frameCount + this.shootDelay;
 
             // calculate angle to player ship
-            const deltaX = ship.x - this.x;
-            const deltaY = ship.y - this.y;
+            const deltaX = ship.position.x - this.position.x;
+            const deltaY = ship.position.y - this.position.y;
             let headingAngle = Math.atan2(deltaY, deltaX);
             headingAngle *= Rad2Deg; // convert to degrees
             headingAngle += 90; // add 90 degrees offset
 
-            enemies.push(new Rocket(this.x, this.y, 5, headingAngle));
+            enemies.push(new Rocket(this.position.x, this.position.y, 5, headingAngle));
 
             playSound("ufoShoot");
         }
     }
 
     inBounds() {
-        return !(this.x + this.size < 0 || this.x > gameCanvas.width + this.size);
+        return !(this.position.x + this.size < 0 || this.position.x > gameCanvas.width + this.size);
     }
 
     checkBounds() {
-        if (this.x + this.size * 10 < 0) {
-            this.y = this.size + Math.random() * (gameCanvas.height - this.size * 2);
+        if (this.position.x + this.size * 10 < 0) {
+            this.position.y = this.size + Math.random() * (gameCanvas.height - this.size * 2);
             this.dir *= -1;
         }
-        else if (this.x > gameCanvas.width + this.size * 10) {
-            this.y = this.size + Math.random() * (gameCanvas.height - this.size * 2);
+        else if (this.position.x > gameCanvas.width + this.size * 10) {
+            this.position.y = this.size + Math.random() * (gameCanvas.height - this.size * 2);
             this.dir *= -1;
         }
     }

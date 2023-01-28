@@ -1,9 +1,6 @@
 class Rocket {
     constructor(startX, startY, speed, angle) {
-        this.x = startX;
-        this.y = startY;
-        this.velX = 0;
-        this.velY = 0;
+        this.position = new Vector(startX, startY);
         this.angle = angle;
         this.moveSpeed = speed;
         this.lifetime = frameCount + fps;
@@ -13,18 +10,10 @@ class Rocket {
     }
 
     update() {
-        const dirVectorX = Math.cos((this.angle - 90) * Deg2Rad);
-        const dirVectorY = Math.sin((this.angle - 90) * Deg2Rad);
-
-        const magnitude = Math.sqrt(dirVectorX * dirVectorX + dirVectorY * dirVectorY);
-        const unitVectorX = dirVectorX / magnitude;
-        const unitVectorY = dirVectorY / magnitude;
-
-        this.velX = unitVectorX * this.moveSpeed;
-        this.velY = unitVectorY * this.moveSpeed;
-
-        this.x += this.velX;
-        this.y += this.velY;
+        const direction = new Vector(Math.cos((this.angle - 90) * Deg2Rad), Math.sin((this.angle - 90) * Deg2Rad));
+        const velocity = direction.normalize();
+        velocity.mult(this.moveSpeed);
+        this.position.add(velocity);
 
         this.checkBounds();
     }
@@ -32,7 +21,7 @@ class Rocket {
     draw(ctx) {
         ctx.save();
 
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.position.x, this.position.y);
 
         ctx.rotate(this.angle * Deg2Rad);
 
@@ -57,11 +46,11 @@ class Rocket {
     }
 
     checkBounds() {
-        if (this.x < 0 - this.size) this.x = gameCanvas.width + this.size;
-        else if (this.x > gameCanvas.width + this.size) this.x = 0 - this.size;
+        if (this.position.x < 0 - this.size) this.position.x = gameCanvas.width + this.size;
+        else if (this.position.x > gameCanvas.width + this.size) this.position.x = 0 - this.size;
 
-        if (this.y < 0 - this.size) this.y = gameCanvas.height + this.size;
-        else if (this.y > gameCanvas.height + this.size) this.y = 0 - this.size;
+        if (this.position.y < 0 - this.size) this.position.y = gameCanvas.height + this.size;
+        else if (this.position.y > gameCanvas.height + this.size) this.position.y = 0 - this.size;
     }
 
     hit() {

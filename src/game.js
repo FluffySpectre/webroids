@@ -186,7 +186,7 @@ const updateGame = () => {
     for (let d of enemies) {
         d.update();
 
-        if (ship.canBeHit() && checkCollision(ship.x, ship.y, ship.collisionRadius, d.x, d.y, d.collisionRadius)) {
+        if (ship.canBeHit() && checkCollision(ship.position.x, ship.position.y, ship.collisionRadius, d.position.x, d.position.y, d.collisionRadius)) {
             shipDied();
         }
     }
@@ -197,14 +197,14 @@ const updateGame = () => {
         // check for collisions with enemies
         for (let i = enemies.length - 1; i >= 0; i--) {
             let d = enemies[i];
-            if (checkCollision(r.x, r.y, r.collisionRadius, d.x, d.y, d.collisionRadius)) {
+            if (checkCollision(r.position.x, r.position.y, r.collisionRadius, d.position.x, d.position.y, d.collisionRadius)) {
                 r.destroy();
                 d.hit();
                 addScore(d.hitScore);
 
                 // we destroyed the target, spawn a huuuuge explosion
                 if (!d.isAlive()) {
-                    const explosion = new ParticleSystem(d.x, d.y);
+                    const explosion = new ParticleSystem(d.position.x, d.position.y);
                     for (let i = 0; i < 10; i++) {
                         explosion.addParticle(new ExplosionParticle("white"));
                     }
@@ -397,7 +397,7 @@ const spawnUFO = () => {
 
 const shipDied = () => {
     // spawn an explosion at the ships position
-    const explosion = new ParticleSystem(ship.x, ship.y);
+    const explosion = new ParticleSystem(ship.position.x, ship.position.y);
     for (let i = 0; i < 3; i++) {
         explosion.addParticle(new ShipExplosionParticle("white"));
     }

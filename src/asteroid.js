@@ -1,7 +1,6 @@
 class Asteroid {
     constructor(startX, startY, size, speed, angle, stage = 1) {
-        this.x = startX;
-        this.y = startY;
+        this.position = new Vector(startX, startY);
         this.collisionRadius = size * 0.75;
         this.edges = parseInt(8 + Math.random() * 12);
         this.pointRadiie = [];
@@ -20,18 +19,10 @@ class Asteroid {
     }
 
     update() {
-        const dirVectorX = Math.cos((this.angle - 90) * Deg2Rad);
-        const dirVectorY = Math.sin((this.angle - 90) * Deg2Rad);
-
-        const magnitude = Math.sqrt(dirVectorX * dirVectorX + dirVectorY * dirVectorY);
-        const unitVectorX = dirVectorX / magnitude;
-        const unitVectorY = dirVectorY / magnitude;
-
-        this.velX = unitVectorX * this.moveSpeed;
-        this.velY = unitVectorY * this.moveSpeed;
-
-        this.x += this.velX;
-        this.y += this.velY;
+        const direction = new Vector(Math.cos((this.angle - 90) * Deg2Rad), Math.sin((this.angle - 90) * Deg2Rad));
+        const velocity = direction.normalize();
+        velocity.mult(this.moveSpeed);
+        this.position.add(velocity);
 
         this.rotationAngle += this.rotationSpeed;
 
@@ -41,7 +32,7 @@ class Asteroid {
     draw(ctx) {
         ctx.save();
 
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.position.x, this.position.y);
 
         ctx.rotate(this.rotationAngle * Deg2Rad);
 
@@ -52,7 +43,7 @@ class Asteroid {
         let eq = 360 / this.edges;
         ctx.beginPath();
 
-        for (var i = 0 ; i <= this.edges; i++) {
+        for (let i = 0 ; i <= this.edges; i++) {
             let deg = i * eq;
             let rad = deg * Deg2Rad;
 
@@ -75,11 +66,11 @@ class Asteroid {
     }
 
     checkBounds() {
-        if (this.x + this.size < 0) this.x = gameCanvas.width + this.size;
-        else if (this.x > gameCanvas.width + this.size) this.x = -this.size;
+        if (this.position.x + this.size < 0) this.position.x = gameCanvas.width + this.size;
+        else if (this.position.x > gameCanvas.width + this.size) this.position.x = -this.size;
 
-        if (this.y + this.size < 0) this.y = gameCanvas.height + this.size;
-        else if (this.y > gameCanvas.height + this.size) this.y = -this.size;
+        if (this.position.y + this.size < 0) this.position.y = gameCanvas.height + this.size;
+        else if (this.position.y > gameCanvas.height + this.size) this.position.y = -this.size;
     }
 
     hit() {
@@ -88,8 +79,8 @@ class Asteroid {
         // only split in two asteroids, if we are still big enough
         // otherwise just disappear
         if (this.size >= 30) {
-            const a1 = new Asteroid(this.x, this.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
-            const a2 = new Asteroid(this.x, this.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
+            const a1 = new Asteroid(this.position.x, this.position.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
+            const a2 = new Asteroid(this.position.x, this.position.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
 
             // TODO: find a way to not use a global here
             enemies.push(a1, a2);
