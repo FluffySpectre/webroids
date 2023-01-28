@@ -109,15 +109,15 @@ const initGame = () => {
 
 const startGame = () => {
     sfxClips = {
-        pauseIn: loadAudioClip("assets/pause_in.wav"),
-        pauseOut: loadAudioClip("assets/pause_out.wav"),
-        coin: loadAudioClip("assets/coin.wav"),
-        shoot: loadAudioClip("assets/shoot.wav"),
-        ufoShoot: loadAudioClip("assets/shoot.wav"),
-        shipExplosion: loadAudioClip("assets/ship_explosion.wav"),
-        ufoExplosion: loadAudioClip("assets/ufo_explosion.wav"),
-        asteroidExplosion: loadAudioClip("assets/asteroid_explosion.wav"),
-        gameOver: loadAudioClip("assets/gameover_2.wav"),
+        pauseIn: loadAudioClip("assets/pause_in.mp3"),
+        pauseOut: loadAudioClip("assets/pause_out.mp3"),
+        coin: loadAudioClip("assets/coin.mp3"),
+        shoot: loadAudioClip("assets/shoot.mp3"),
+        ufoShoot: loadAudioClip("assets/shoot.mp3"),
+        shipExplosion: loadAudioClip("assets/ship_explosion.mp3"),
+        ufoExplosion: loadAudioClip("assets/ufo_explosion.mp3"),
+        asteroidExplosion: loadAudioClip("assets/asteroid_explosion.mp3"),
+        gameOver: loadAudioClip("assets/gameover_2.mp3"),
         // ufoFlying: loadAudioClip("assets/ufo_flying_2.wav"),
     };
 
