@@ -16,8 +16,7 @@ const fps = 60;
 let frameCount = 0;
 
 let gameState = "menu"; // game, gameover, pause
-let sfxClips = {};
-let soundOn = true;
+let soundFX = new SoundFX();
 let score = 0, highscore = 0;
 let inputs = { left: false, right: false, up: false, fire: false, pause: { pressed: false, down: false } };
 let inputHorizontal = 0, inputVertical = 0;
@@ -50,27 +49,8 @@ const updateHighscore = () => {
 };
 
 const toggleSound = () => {
-    soundOn = !soundOn;
-    soundToggleBtn.className = (soundOn ? "soundOn" : "soundOff");
-};
-
-const loadAudioClip = (fileURL) => {
-    const clip = new Audio(fileURL);
-    clip.load();
-    return clip;
-};
-
-const playSound = (clipName, loop = false) => {
-    if (soundOn && sfxClips[clipName]) {
-        sfxClips[clipName].loop = loop;
-        sfxClips[clipName].play().catch(() => {});
-    }
-};
-
-const stopSound = (clipName) => {
-    if (!sfxClips[clipName]) return;
-    sfxClips[clipName].pause();
-    sfxClips[clipName].currentTime = 0;  
+    soundFX.toggleSound();
+    soundToggleBtn.className = (soundFX.soundOn ? "soundOn" : "soundOff");
 };
 
 const addScore = (scoreToAdd) => {
@@ -108,18 +88,20 @@ const initGame = () => {
 };
 
 const startGame = () => {
-    sfxClips = {
-        pauseIn: loadAudioClip("assets/pause_in.mp3"),
-        pauseOut: loadAudioClip("assets/pause_out.mp3"),
-        coin: loadAudioClip("assets/coin.mp3"),
-        shoot: loadAudioClip("assets/shoot.mp3"),
-        ufoShoot: loadAudioClip("assets/shoot.mp3"),
-        shipExplosion: loadAudioClip("assets/ship_explosion.mp3"),
-        ufoExplosion: loadAudioClip("assets/ufo_explosion.mp3"),
-        asteroidExplosion: loadAudioClip("assets/asteroid_explosion.mp3"),
-        gameOver: loadAudioClip("assets/gameover_2.mp3"),
-        // ufoFlying: loadAudioClip("assets/ufo_flying_2.wav"),
-    };
+    if (!soundFX.clipsLoaded) {
+        soundFX.loadSFXClips({
+            pauseIn: "assets/pause_in.mp3",
+            pauseOut: "assets/pause_out.mp3",
+            coin: "assets/coin.mp3",
+            shoot: "assets/shoot.mp3",
+            ufoShoot: "assets/shoot.mp3",
+            shipExplosion: "assets/ship_explosion.mp3",
+            ufoExplosion: "assets/ufo_explosion.mp3",
+            asteroidExplosion: "assets/asteroid_explosion.mp3",
+            gameOver: "assets/gameover_2.mp3",
+            // ufoFlying: "assets/ufo_flying_2.wav",
+        });
+    }
 
     ship.reset();
     ship.beInvincible();
@@ -134,18 +116,18 @@ const startGame = () => {
 
     gameState = "game";
 
-    playSound("coin");
+    soundFX.playSound("coin");
 };
 
 const togglePause = () => {
     if (gameState === "game") {
         gameState = "pause";
         pauseOverlay.style.display = "flex";
-        playSound("pauseIn");
+        soundFX.playSound("pauseIn");
     } else if (gameState === "pause") {
         gameState = "game";
         pauseOverlay.style.display = "none";
-        playSound("pauseOut");
+        soundFX.playSound("pauseOut");
     }
 };
 
@@ -211,9 +193,9 @@ const updateGame = () => {
                     explosions.push(explosion);
 
                     if (d.explosionSound) {
-                        playSound(d.explosionSound);
+                        soundFX.playSound(d.explosionSound);
                     } else {
-                        playSound("asteroidExplosion");
+                        soundFX.playSound("asteroidExplosion");
                     }
                 }
             }
@@ -234,7 +216,7 @@ const updateGame = () => {
         let newRocket = ship.shootRocket();
         rockets.push(newRocket);
 
-        playSound("shoot");
+        soundFX.playSound("shoot");
     }
 
     if (numAsteroids < maxAsteroids && frameCount > asteroidSpawnCooldown) {
@@ -403,7 +385,7 @@ const shipDied = () => {
     }
     explosions.push(explosion);
 
-    playSound("shipExplosion");
+    soundFX.playSound("shipExplosion");
 
     ship.die();
 
@@ -424,7 +406,7 @@ const gameOver = () => {
     gameState = "gameover";
 
     setTimeout(() => {
-        playSound("gameOver");
+        soundFX.playSound("gameOver");
 
         ship.reset();
         ship.disabled = true;

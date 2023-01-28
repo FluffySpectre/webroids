@@ -22,7 +22,7 @@ class UFO {
         ];
         this.explosionSound = "ufoExplosion";
 
-        playSound("ufoFlying", true);
+        soundFX.playSound("ufoFlying", true);
     }
 
     update() {
@@ -79,7 +79,7 @@ class UFO {
 
             enemies.push(new Rocket(this.position.x, this.position.y, 5, headingAngle));
 
-            playSound("ufoShoot");
+            soundFX.playSound("ufoShoot");
         }
     }
 
@@ -101,7 +101,7 @@ class UFO {
     hit() {
         this.alive = false;
         ufoSpawnCooldown = frameCount + (ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax);
-        stopSound("ufoFlying");
+        soundFX.stopSound("ufoFlying");
     }
 
     isAlive() {
