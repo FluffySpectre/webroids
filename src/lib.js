@@ -1,3 +1,17 @@
+const getRandomFloat = (min, max) => {
+    return Math.random() * (max - min) + min;
+};
+
+const checkCollision = (x1, y1, r1, x2, y2, r2) => {
+    const deltaX = Math.abs(x1 - x2);
+    const deltaY = Math.abs(y1 - y2);
+    const dist = Math.hypot(deltaX, deltaY);
+    const out = (dist > (r1 + r2));
+    const circleInOtherCircle = !out && (r2 > (r1 + dist)); 
+    const otherCircleInCircle = !out && (r1 > (r2 + dist));
+    return !(out || circleInOtherCircle || otherCircleInCircle);
+};
+
 const Deg2Rad = Math.PI / 180;
 const Rad2Deg = 180 / Math.PI;
 

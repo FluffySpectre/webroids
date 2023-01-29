@@ -6,7 +6,7 @@
         <style>
             @font-face {
                 font-family: vectorFont;
-                src: url(assets/HyperspaceBold-GM0g.ttf);
+                src: url(assets/fonts/HyperspaceBold-GM0g.ttf);
             }
 
             html, body {
@@ -107,7 +107,7 @@
                 height: 48px;
             }
             #controlBar > button.soundOn {
-                background: url(assets/sound_on.png);
+                background: url(assets/images/sound_on.png);
                 background-size: 60%;
                 background-repeat: no-repeat;
                 background-position: center;
@@ -115,7 +115,7 @@
                 right: 0;
             }
             #controlBar > button.soundOff {
-                background: url(assets/sound_off.png);
+                background: url(assets/images/sound_off.png);
                 background-size: 60%;
                 background-repeat: no-repeat;
                 background-position: center;
@@ -170,9 +170,9 @@
             </div>
 
             <div id="lifesContainer">
-                <img id="life1" src="assets/life.png" />
-                <img id="life2" src="assets/life.png" />
-                <img id="life3" src="assets/life.png" />
+                <img id="life1" src="assets/images/life.png" />
+                <img id="life2" src="assets/images/life.png" />
+                <img id="life3" src="assets/images/life.png" />
             </div>
 
             <div id="controlBar">
@@ -192,13 +192,8 @@
         </div>
 
         <script type="text/javascript" src="lib/howler.core.min.js"></script>
-        <script type="text/javascript" src="soundfx_howler.js"></script>
-        <script type="text/javascript" src="vector.js"></script>
-        <script type="text/javascript" src="particles.js"></script>
-        <script type="text/javascript" src="asteroid.js"></script>
-        <script type="text/javascript" src="rocket.js"></script>
-        <script type="text/javascript" src="ufo.js"></script>
-        <script type="text/javascript" src="ship.js"></script>
+        <script type="text/javascript" src="lib.js"></script>
+        <script type="text/javascript" src="classes.js"></script>
         <script type="text/javascript" src="game.js"></script>
     </body>
 </html>

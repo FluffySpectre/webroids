@@ -82,16 +82,16 @@ const initInput = () => {
 const initSoundFX = () => {
     soundFX = new SoundFX();
     soundFX.loadSFXClips({
-        pauseIn: "assets/pause_in.mp3",
-        pauseOut: "assets/pause_out.mp3",
-        coin: "assets/coin.mp3",
-        shoot: "assets/shoot.mp3",
-        ufoShoot: "assets/shoot.mp3",
-        shipExplosion: "assets/ship_explosion.mp3",
-        ufoExplosion: "assets/ufo_explosion.mp3",
-        asteroidExplosion: "assets/asteroid_explosion.mp3",
-        gameOver: "assets/gameover_2.mp3",
-        // ufoFlying: "assets/ufo_flying_2.wav",
+        pauseIn: "assets/sfx/pause_in.mp3",
+        pauseOut: "assets/sfx/pause_out.mp3",
+        coin: "assets/sfx/coin.mp3",
+        shoot: "assets/sfx/shoot.mp3",
+        ufoShoot: "assets/sfx/shoot.mp3",
+        shipExplosion: "assets/sfx/ship_explosion.mp3",
+        ufoExplosion: "assets/sfx/ufo_explosion.mp3",
+        asteroidExplosion: "assets/sfx/asteroid_explosion.mp3",
+        gameOver: "assets/sfx/gameover_2.mp3",
+        // ufoFlying: "assets/sfx/ufo_flying_2.wav",
     });
 };
 
@@ -325,7 +325,7 @@ const handleGamepadInput = () => {
     // console.log("Button value: " + button.value);
 };
 
-resetFrameInputs = () => {
+const resetFrameInputs = () => {
     inputs.pause.down = false;
 };
 
@@ -443,16 +443,6 @@ const drawBackgroundStars = (ctx) => {
         ctx.fillRect(s.x, s.y, 2, 2);
     }
     ctx.restore();
-};
-
-const checkCollision = (x1, y1, r1, x2, y2, r2) => {
-    const deltaX = Math.abs(x1 - x2);
-    const deltaY = Math.abs(y1 - y2);
-    const dist = Math.hypot(deltaX, deltaY);
-    const out = (dist > (r1 + r2));
-    const circleInOtherCircle = !out && (r2 > (r1 + dist)); 
-    const otherCircleInCircle = !out && (r1 > (r2 + dist));
-    return !(out || circleInOtherCircle || otherCircleInCircle);
 };
 
 initGame();
