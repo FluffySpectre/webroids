@@ -33,7 +33,9 @@ let ufoSpawnCooldown = 0, ufoSpawnDelayMin = fps * 20, ufoSpawnDelayMax = fps * 
 let enemies = [];
 let numUFOs = 0;
 let numAsteroids = 0;
-let lifes = 3;
+let maxLifes = 3;
+let lifes = maxLifes;
+let powerups = [];
 
 const loadHighscore = () => {
     highscore = localStorage.getItem("highscore") || 0;
@@ -64,7 +66,7 @@ const updateScoreDisplay = () => {
 
 const updateLifesDisplay = () => {
     if (lifes >= 0) {
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < maxLifes; i++) {
             if (i < lifes) {
                 lifesElements[i].style.display = "inline";
             } else {
@@ -91,6 +93,7 @@ const initSoundFX = () => {
         ufoExplosion: "assets/sfx/ufo_explosion.mp3",
         asteroidExplosion: "assets/sfx/asteroid_explosion.mp3",
         gameOver: "assets/sfx/gameover_2.mp3",
+        powerup: "assets/sfx/power_up.mp3",
         // ufoFlying: "assets/sfx/ufo_flying_2.wav",
     });
 };
@@ -105,6 +108,11 @@ const initGame = () => {
 };
 
 const startGame = () => {
+    // reset game states
+    powerups = [];
+    enemies = [];
+    explosions = [];
+
     ship.reset();
     ship.beInvincible();
 
@@ -113,7 +121,7 @@ const startGame = () => {
     score = 0;
     updateScoreDisplay();
     
-    lifes = 3;
+    lifes = maxLifes;
     updateLifesDisplay();
 
     gameState = "game";
@@ -163,6 +171,7 @@ const updateGame = () => {
     rockets = rockets.filter(r => r.isAlive());
     enemies = enemies.filter(d => d.isAlive());
     explosions = explosions.filter(e => e.isAlive());
+    powerups = powerups.filter(p => p.isAlive());
 
     numAsteroids = enemies.filter(d => d instanceof Asteroid).length;
     numUFOs = enemies.filter(d => d instanceof UFO).length;
@@ -172,6 +181,16 @@ const updateGame = () => {
 
         if (ship.canBeHit() && checkCollision(ship.position.x, ship.position.y, ship.collisionRadius, d.position.x, d.position.y, d.collisionRadius)) {
             shipDied();
+        }
+    }
+
+    for (let p of powerups) {
+        p.update();
+
+        if (checkCollision(ship.position.x, ship.position.y, ship.collisionRadius, p.position.x, p.position.y, p.collisionRadius)) {
+            p.pickup(ship);
+
+            soundFX.playSound("powerup");
         }
     }
 
@@ -215,8 +234,8 @@ const updateGame = () => {
         inputs.fire = false;
         rocketShootCooldown = frameCount + rocketShootDelay;
 
-        let newRocket = ship.shootRocket();
-        rockets.push(newRocket);
+        const newRockets = ship.shoot();
+        rockets.push(...newRockets);
 
         soundFX.playSound("shoot");
     }
@@ -244,6 +263,10 @@ const drawGame = () => {
 
     for (let d of enemies) {
         d.draw(gameCanvasContext);
+    }
+
+    for (let p of powerups) {
+        p.draw(gameCanvasContext);
     }
 
     ship.draw(gameCanvasContext);
@@ -367,8 +390,7 @@ const spawnAsteroid = () => {
         spawnAngle = 90 + (-20 + Math.random() * 20);
     }
 
-    const a = new Asteroid(spawnPosX, spawnPosY, asteroidStartSize, 1, spawnAngle);
-    enemies.push(a);
+    AsteroidSpawner.spawnAsteroid(spawnPosX, spawnPosY, asteroidStartSize, 1, spawnAngle);
 };
 
 const spawnUFO = () => {

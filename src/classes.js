@@ -61,8 +61,12 @@ class SoundFX {
 // Particles
 class ParticleSystem {
     constructor(x, y) {
-        this.origin = new Vector(x, y);
+        this.setOrigin(x, y);
         this.particles = [];
+    }
+
+    setOrigin(x, y) {
+        this.origin = new Vector(x, y);
     }
 
     addParticle(p) {
@@ -159,6 +163,33 @@ class ShipExplosionParticle extends ExplosionParticle {
         ctx.restore();
     }
 }
+
+class TrailParticle extends Particle {
+    constructor(color, forwardVector) {
+        super(color);
+
+        this.vel = new Vector(forwardVector.x, forwardVector.y).mult(-1);
+        this.vel = this.vel.mult(0.5 + getRandomFloat(0, 2));
+        this.vel = this.vel.add(new Vector(getRandomFloat(-0.5, 0.5), getRandomFloat(-0.5, 0.5)));
+        this.theta = 0.0;
+    }
+
+    update() {
+        super.update();
+
+        this.theta += (this.vel.x * this.vel.mag()) / 5.0;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.rotate(this.theta);
+        ctx.globalAlpha = this.lifespan * 2;
+        ctx.strokeStyle = this.color;
+        ctx.strokeRect(-2, -2, 4, 4);
+        ctx.restore();
+    }
+}
 // End of Particles
 
 // Asteroid
@@ -180,13 +211,14 @@ class Asteroid {
         this.splitted = false;
         this.stage = stage;
         this.hitScore = stage * 20;
+        this.velocity = 0;
     }
 
     update() {
         const direction = new Vector(Math.cos((this.angle - 90) * Deg2Rad), Math.sin((this.angle - 90) * Deg2Rad));
-        const velocity = direction.normalize();
-        velocity.mult(this.moveSpeed);
-        this.position.add(velocity);
+        this.velocity = direction.normalize();
+        this.velocity.mult(this.moveSpeed);
+        this.position.add(this.velocity);
 
         this.rotationAngle += this.rotationSpeed;
 
@@ -243,11 +275,8 @@ class Asteroid {
         // only split in two asteroids, if we are still big enough
         // otherwise just disappear
         if (this.size >= 30) {
-            const a1 = new Asteroid(this.position.x, this.position.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
-            const a2 = new Asteroid(this.position.x, this.position.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
-
-            // TODO: find a way to not use a global here
-            enemies.push(a1, a2);
+            AsteroidSpawner.spawnAsteroid(this.position.x, this.position.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
+            AsteroidSpawner.spawnAsteroid(this.position.x, this.position.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
         }
     }
 
@@ -256,6 +285,67 @@ class Asteroid {
     }
 }
 // End of Asteroid
+
+// SpecialAsteroid
+class SpecialAsteroid extends Asteroid {
+    constructor(startX, startY, size, speed, angle, stage = 1) {
+        super(startX, startY, size, speed, angle, stage);
+
+        this.trailParticleSystem = new ParticleSystem(startX, startY);
+    }
+
+    update() {
+        super.update();
+
+        // update trail particles
+        this.trailParticleSystem.setOrigin(this.position.x, this.position.y);
+        this.trailParticleSystem.addParticle(new TrailParticle("white", this.velocity));
+        this.trailParticleSystem.update();
+    }
+
+    draw(ctx) {
+        this.trailParticleSystem.draw(ctx);
+
+        super.draw(ctx);
+    }
+
+    checkBounds() {
+        if (this.position.x + this.size * 6 < 0 || 
+            this.position.x > gameCanvas.width + this.size * 6 ||
+            this.position.y + this.size * 6 < 0 ||
+            this.position.y > gameCanvas.height + this.size * 6) {
+                this.splitted = true;
+        }
+    }
+
+    hit() {
+        this.splitted = true;
+
+        // spawn a pickup item
+        PowerupSpawner.spawnRandomPowerup(this.position);
+    }
+
+    isAlive() {
+        return !this.splitted;
+    }
+}
+// End of SpecialAsteroid
+
+// AsteroidSpawner
+class AsteroidSpawner {
+    static spawnAsteroid(spawnX, spawnY, size, speed, spawnAngle, stage = 1) {
+        // spawn a special asteroid with a 10% chance
+        if (Math.random() < 0.1) {
+            const a = new SpecialAsteroid(spawnX, spawnY, size, speed * 0.5, spawnAngle, stage);
+            enemies.push(a);
+        }
+        else {
+            const a = new Asteroid(spawnX, spawnY, size, speed, spawnAngle, stage);
+            enemies.push(a);
+        }
+    }
+}
+// End of AsteroidSpawner
 
 // Rocket
 class Rocket {
@@ -424,6 +514,8 @@ class UFO {
         this.alive = false;
         ufoSpawnCooldown = frameCount + (ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax);
         soundFX.stopSound("ufoFlying");
+        
+        PowerupSpawner.spawnRandomPowerup(this.position);
     }
 
     isAlive() {
@@ -445,6 +537,7 @@ class Ship {
         this.friction = 0.02;
         this.inputVertical = 0;
         this.size = 20;
+        this.scale = 2;
         this.collisionRadius = this.size * 0.6;
         this.invincible = false;
         this.invincibleCooldown = 0;
@@ -453,6 +546,7 @@ class Ship {
         this.flicker = true;
         this.dead = false;
         this.disabled = disabled;
+        this.numProjectiles = 1;
     }
 
     reset() {
@@ -463,6 +557,9 @@ class Ship {
         this.dead = false;
         this.flicker = true;
         this.disabled = false;
+        this.numProjectiles = 1;
+        this.collisionRadius = this.size * 0.6;
+        this.scale = 2;
     }
 
     canBeHit() {
@@ -488,9 +585,21 @@ class Ship {
         this.acceleration.mult(this.moveSpeed);
     }
 
-    shootRocket() {
-        const r = new Rocket(this.position.x, this.position.y, 8, this.angle);
-        return r;
+    shoot() {
+        const projectiles = [];
+
+        if (this.numProjectiles > 1) {
+            let spread = -30;
+            for (let i=0; i<this.numProjectiles; i++) {
+                projectiles.push(new Rocket(this.position.x, this.position.y, 8, this.angle + spread));
+                spread += 30;
+            }
+        }
+        else {
+            projectiles.push(new Rocket(this.position.x, this.position.y, 8, this.angle));
+        }
+
+        return projectiles;
     }
 
     update() {
@@ -517,7 +626,7 @@ class Ship {
 
         ctx.translate(this.position.x, this.position.y);
 
-        ctx.scale(2, 2);
+        ctx.scale(this.scale, this.scale);
         ctx.rotate(this.angle * Deg2Rad);
 
         ctx.lineWidth = 1;
@@ -567,3 +676,195 @@ class Ship {
     }
 }
 // End of Ship
+
+// PowerupSpawner
+class PowerupSpawner {
+    static spawnRandomPowerup(position) {
+        // calculate a random powerup type
+        const powerupType = this.getRandomPowerup(lifes, maxLifes);
+
+        if (powerupType === "HealthPowerup") {
+            powerups.push(new HealthPowerup(position));
+        }
+        else if (powerupType === "ShrinkPowerup") {
+            powerups.push(new ShrinkPowerup(position));
+        }
+        else if (powerupType == "TripleShotPowerup") {
+            powerups.push(new TripleShotPowerup(position));
+        }
+    }
+
+    static getRandomPowerup(playerLifes, maxLifes) {
+        const healthWeight = Math.max(20 * (maxLifes - playerLifes), 5);
+
+        const powerups = [
+            { name: "HealthPowerup", baseWeight: healthWeight },
+            { name: "ShrinkPowerup", baseWeight: 20 },
+            { name: "TripleShotPowerup", baseWeight: 25 },
+        ];
+
+        // sum all weights
+        const totalWeight = powerups.reduce((sum, powerup) => sum + powerup.baseWeight, 0);
+
+        // pick a random powerup based on its weight
+        let random = Math.random() * totalWeight;
+        for (let powerup of powerups) {
+            if (random < powerup.baseWeight) {
+                return powerup.name;
+            }
+            random -= powerup.baseWeight;
+        }
+    }
+}
+// End of PowerupSpawner
+
+// Powerup
+class Powerup {
+    constructor(position) {
+        this.position = position;
+        this.pickedUp = false;
+        this.theta = 0;
+        this.collisionRadius = 10;
+        this.pickupTimer = 10;
+        this.dead = false;
+    }
+
+    update() {
+        this.theta += 0.05;
+
+        this.pickupTimer -= 1 / fps;
+        if (this.pickupTimer < 0) {
+            this.dead = true;
+        }
+    }
+
+    draw(ctx) {
+        if (this.pickedUp) return;
+
+        ctx.save();
+        ctx.translate(this.position.x, this.position.y);
+        ctx.scale(2, 2);
+        ctx.rotate(this.theta);
+
+        // blinking powerup
+        if (this.pickupTimer < 5) {
+            const minFrequency = 12;
+            const blinkSpeed = minFrequency + this.pickupTimer * (20 / 5); 
+            const blink = Math.sin(frameCount / blinkSpeed) > 0 ? "white" : "gray";
+            ctx.strokeStyle = blink;
+        } else {
+            ctx.strokeStyle = "white";
+        }
+
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-5, -5, 10, 10);
+
+        ctx.rotate(45 * Deg2Rad);
+        ctx.strokeRect(-1, -1, 2, 2);
+
+        ctx.restore();
+    }
+
+    pickup(player) {
+        this.pickedUp = true;
+        this.collisionRadius = 0;
+    }
+
+    isAlive() {
+        return !this.dead && !this.pickedUp;
+    }
+}
+// End of Powerup
+
+// HealthPowerup
+class HealthPowerup extends Powerup {
+    constructor(position) {
+        super(position);
+    }
+
+    pickup(player) {
+        super.pickup(player);
+
+        if (lifes < maxLifes) {
+            lifes++;
+            updateLifesDisplay();
+        }
+    }
+}
+// End of HealthPowerup
+
+// TripleShotPowerup
+class TripleShotPowerup extends Powerup {
+    constructor(position) {
+        super(position);
+
+        this.deactivateFrame = 0;
+        this.active = false;
+        this.player = null;
+    }
+
+    update() {
+        super.update();
+
+        if (this.pickedUp && frameCount >= this.deactivateFrame) {
+            this.active = false;
+
+            this.player.numProjectiles = 1;
+        }
+    }
+
+    pickup(player) {
+        this.player = player;
+
+        super.pickup(player);
+
+        player.numProjectiles = 3;
+
+        this.active = true;
+        this.deactivateFrame = frameCount + fps * 10;
+    }
+
+    isAlive() {
+        return this.active || (!this.dead && !this.pickedUp);
+    }
+}
+// End of TripleShotPickup
+
+// ShrinkPowerup
+class ShrinkPowerup extends Powerup {
+    constructor(position) {
+        super(position);
+
+        this.deactivateFrame = 0;
+        this.active = false;
+        this.player = null;
+    }
+
+    update() {
+        super.update();
+
+        if (this.pickedUp && frameCount >= this.deactivateFrame) {
+            this.active = false;
+
+            this.player.scale = 2;
+            this.player.collisionRadius = this.player.size * 0.6;
+        }
+    }
+
+    pickup(player) {
+        this.player = player;
+
+        super.pickup(player);
+
+        player.scale = 1;
+        player.collisionRadius = 10 * 0.6;
+
+        this.active = true;
+        this.deactivateFrame = frameCount + fps * 10;
+    }
+
+    isAlive() {
+        return this.active || (!this.dead && !this.pickedUp);
+    }
+}
+// End of ShrinkPowerup
