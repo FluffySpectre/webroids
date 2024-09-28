@@ -82,4 +82,10 @@ class Vector {
     copy() {
         return new Vector(this.x, this.y);
     }
+
+    dist(other) {
+        const dx = this.x - other.x;
+        const dy = this.y - other.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 }

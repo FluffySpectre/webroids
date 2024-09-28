@@ -409,6 +409,49 @@ class Rocket {
 }
 // End of Rocket
 
+// HomingRocket
+class HomingRocket extends Rocket {
+    constructor(startX, startY, speed, angle) {
+        super(startX, startY, speed, angle);
+        this.turnSpeed = 20;
+    }
+
+    update() {
+        const target = this.findNearestEnemy();
+        if (target) {
+            this.adjustAngleTowards(target);
+        }
+        super.update();
+    }
+
+    findNearestEnemy() {
+        let closestAsteroid = null;
+        let closestDistance = Infinity;
+
+        for (let enemy of enemies) {
+            const dist = this.position.dist(enemy.position);
+            if (dist < closestDistance) {
+                closestDistance = dist;
+                closestAsteroid = enemy;
+            }
+        }
+
+        return closestAsteroid;
+    }
+
+    adjustAngleTowards(target) {
+        const targetAngle = Math.atan2(target.position.y - this.position.y, target.position.x - this.position.x) * (180 / Math.PI) + 90;
+        const angleDiff = (targetAngle - this.angle + 360) % 360;
+
+        if (angleDiff < 180) {
+            this.angle += Math.min(this.turnSpeed, angleDiff);
+        } else {
+            this.angle -= Math.min(this.turnSpeed, 360 - angleDiff);
+        }
+    }
+}
+// End of HomingRocket
+
 // UFO
 class UFO {
     constructor(startX, startY, size) {
@@ -547,6 +590,7 @@ class Ship {
         this.dead = false;
         this.disabled = disabled;
         this.numProjectiles = 1;
+        this.homing = false;
     }
 
     reset() {
@@ -560,6 +604,7 @@ class Ship {
         this.numProjectiles = 1;
         this.collisionRadius = this.size * 0.6;
         this.scale = 2;
+        this.homing = false;
     }
 
     canBeHit() {
@@ -591,12 +636,20 @@ class Ship {
         if (this.numProjectiles > 1) {
             let spread = -30;
             for (let i=0; i<this.numProjectiles; i++) {
-                projectiles.push(new Rocket(this.position.x, this.position.y, 8, this.angle + spread));
+                if (this.homing) {
+                    projectiles.push(new HomingRocket(this.position.x, this.position.y, 8, this.angle + spread));
+                } else {
+                    projectiles.push(new Rocket(this.position.x, this.position.y, 8, this.angle + spread));
+                }
                 spread += 30;
             }
         }
         else {
-            projectiles.push(new Rocket(this.position.x, this.position.y, 8, this.angle));
+            if (this.homing) {
+                projectiles.push(new HomingRocket(this.position.x, this.position.y, 8, this.angle));
+            } else {
+                projectiles.push(new Rocket(this.position.x, this.position.y, 8, this.angle));
+            }
         }
 
         return projectiles;
@@ -692,6 +745,9 @@ class PowerupSpawner {
         else if (powerupType == "TripleShotPowerup") {
             powerups.push(new TripleShotPowerup(position));
         }
+        else if (powerupType === "HomingRocketsPowerup") {
+            powerups.push(new HomingRocketsPowerup(position));
+        }
     }
 
     static getRandomPowerup(playerLifes, maxLifes) {
@@ -701,6 +757,7 @@ class PowerupSpawner {
             { name: "HealthPowerup", baseWeight: healthWeight },
             { name: "ShrinkPowerup", baseWeight: 20 },
             { name: "TripleShotPowerup", baseWeight: 25 },
+            { name: "HomingRocketsPowerup", baseWeight: 25 },
         ];
 
         // sum all weights
@@ -727,6 +784,7 @@ class Powerup {
         this.collisionRadius = 10;
         this.pickupTimer = 10;
         this.dead = false;
+        this.player = null;
     }
 
     update() {
@@ -768,6 +826,7 @@ class Powerup {
     pickup(player) {
         this.pickedUp = true;
         this.collisionRadius = 0;
+        this.player = player;
     }
 
     isAlive() {
@@ -775,6 +834,40 @@ class Powerup {
     }
 }
 // End of Powerup
+
+class TimedPowerup extends Powerup {
+    constructor(position, duration = 10) {
+        super(position);
+        this.duration = fps * duration;
+        this.active = false;
+    }
+
+    activated() {}
+    deactivated() {}
+
+    update() {
+        super.update();
+
+        if (this.active) {
+            this.duration--;
+            if (this.duration <= 0) {
+                this.active = false;
+                this.deactivated();
+            }
+        }
+    }
+
+    pickup(player) {
+        super.pickup(player);
+
+        this.active = true;
+        this.activated();
+    }
+
+    isAlive() {
+        return this.active || (!this.dead && !this.pickedUp);
+    }
+}
 
 // HealthPowerup
 class HealthPowerup extends Powerup {
@@ -794,77 +887,51 @@ class HealthPowerup extends Powerup {
 // End of HealthPowerup
 
 // TripleShotPowerup
-class TripleShotPowerup extends Powerup {
+class TripleShotPowerup extends TimedPowerup {
     constructor(position) {
-        super(position);
-
-        this.deactivateFrame = 0;
-        this.active = false;
-        this.player = null;
+        super(position, 10);
     }
 
-    update() {
-        super.update();
-
-        if (this.pickedUp && frameCount >= this.deactivateFrame) {
-            this.active = false;
-
-            this.player.numProjectiles = 1;
-        }
+    activated() {
+        this.player.numProjectiles = 3;
     }
 
-    pickup(player) {
-        this.player = player;
-
-        super.pickup(player);
-
-        player.numProjectiles = 3;
-
-        this.active = true;
-        this.deactivateFrame = frameCount + fps * 10;
-    }
-
-    isAlive() {
-        return this.active || (!this.dead && !this.pickedUp);
+    deactivated() {
+        this.player.numProjectiles = 1;
     }
 }
 // End of TripleShotPickup
 
 // ShrinkPowerup
-class ShrinkPowerup extends Powerup {
+class ShrinkPowerup extends TimedPowerup {
     constructor(position) {
-        super(position);
-
-        this.deactivateFrame = 0;
-        this.active = false;
-        this.player = null;
+        super(position, 10);
     }
 
-    update() {
-        super.update();
-
-        if (this.pickedUp && frameCount >= this.deactivateFrame) {
-            this.active = false;
-
-            this.player.scale = 2;
-            this.player.collisionRadius = this.player.size * 0.6;
-        }
+    activated() {
+        this.player.scale = 1;
+        this.player.collisionRadius = 10 * 0.6;
     }
 
-    pickup(player) {
-        this.player = player;
-
-        super.pickup(player);
-
-        player.scale = 1;
-        player.collisionRadius = 10 * 0.6;
-
-        this.active = true;
-        this.deactivateFrame = frameCount + fps * 10;
-    }
-
-    isAlive() {
-        return this.active || (!this.dead && !this.pickedUp);
+    deactivated() {
+        this.player.scale = 2;
+        this.player.collisionRadius = this.player.size * 0.6;
     }
 }
 // End of ShrinkPowerup
+
+// HomingRocketsPowerup
+class HomingRocketsPowerup extends TimedPowerup {
+    constructor(position) {
+        super(position, 10);
+    }
+
+    activated() {
+        this.player.homing = true;
+    }
+
+    deactivated() {
+        this.player.homing = false;
+    }
+}
+// End of HomingRocketsPowerup
