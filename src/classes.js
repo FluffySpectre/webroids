@@ -539,6 +539,7 @@ class Ship {
         this.numProjectiles = 1;
         this.homing = false;
         this.flameFlickerTimer = 0;
+        this.activePowerups = {};
     }
 
     reset() {
@@ -756,8 +757,8 @@ class Powerup {
 
         // blinking powerup
         if (this.pickupTimer < 5) {
-            this.blinkTimer += deltaTime;
-            const minFrequency = 12;
+            this.blinkTimer += deltaTime * 60;
+            const minFrequency = 5;
             const blinkSpeed = minFrequency + this.pickupTimer * (20 / 5); 
             const blink = Math.sin(this.blinkTimer / blinkSpeed) > 0 ? "white" : "gray";
             ctx.strokeStyle = blink;
@@ -795,7 +796,18 @@ class TimedPowerup extends Powerup {
     }
 
     activated() {}
-    deactivated() {}
+    deactivated() {
+        const powerupType = this.constructor.name;
+        if (this.player && this.player.activePowerups[powerupType] === this) {
+            delete this.player.activePowerups[powerupType];
+        }
+        this.dead = true;
+    }
+    deactivatedEarly() {
+        this.duration = 0;
+        this.active = false;
+        this.deactivated();
+    }
 
     update() {
         super.update();
@@ -811,6 +823,12 @@ class TimedPowerup extends Powerup {
 
     pickup(player) {
         super.pickup(player);
+
+        const powerupType = this.constructor.name;
+        if (player.activePowerups[powerupType]) {
+            player.activePowerups[powerupType].deactivatedEarly();
+        }
+        player.activePowerups[powerupType] = this;
 
         this.active = true;
         this.activated();
@@ -841,7 +859,7 @@ class HealthPowerup extends Powerup {
 // TripleShotPowerup
 class TripleShotPowerup extends TimedPowerup {
     constructor(position) {
-        super(position, 10);  // 10 seconds duration
+        super(position, 10);
     }
 
     activated() {
@@ -849,6 +867,8 @@ class TripleShotPowerup extends TimedPowerup {
     }
 
     deactivated() {
+        super.deactivated();
+
         this.player.numProjectiles = 1;
     }
 }
@@ -857,7 +877,7 @@ class TripleShotPowerup extends TimedPowerup {
 // ShrinkPowerup
 class ShrinkPowerup extends TimedPowerup {
     constructor(position) {
-        super(position, 10);  // 10 seconds duration
+        super(position, 10);
     }
 
     activated() {
@@ -866,6 +886,8 @@ class ShrinkPowerup extends TimedPowerup {
     }
 
     deactivated() {
+        super.deactivated();
+
         this.player.scale = 2;
         this.player.collisionRadius = this.player.size * 0.6;
     }
@@ -875,7 +897,7 @@ class ShrinkPowerup extends TimedPowerup {
 // HomingRocketsPowerup
 class HomingRocketsPowerup extends TimedPowerup {
     constructor(position) {
-        super(position, 10);  // 10 seconds duration
+        super(position, 10);
     }
 
     activated() {
@@ -883,6 +905,8 @@ class HomingRocketsPowerup extends TimedPowerup {
     }
 
     deactivated() {
+        super.deactivated();
+
         this.player.homing = false;
     }
 }
