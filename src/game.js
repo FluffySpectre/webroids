@@ -12,8 +12,8 @@ const playOverlay = document.getElementById("playOverlay");
 const pauseOverlay = document.getElementById("pauseOverlay");
 const gameOverOverlay = document.getElementById("gameOverOverlay");
 
-const fps = 60;
-let frameCount = 0;
+let lastTime = 0;
+let deltaTime = 0;
 
 let gameState = "menu"; // game, gameover, pause
 let soundFX;
@@ -23,13 +23,13 @@ let inputHorizontal = 0, inputVertical = 0;
 let bgStars = [];
 let ship;
 let rockets = [];
-let rocketShootCooldown = 0, rocketShootDelay = 15;
+let rocketShootTimer = 0, rocketShootDelay = 0.25;
 let maxAsteroids = 5;
-let asteroidSpawnCooldown = 0, asteroidSpawnDelay = 60;
+let asteroidSpawnTimer = 0, asteroidSpawnDelay = 1;
 let asteroidStartSize = 60;
 let explosions = [];
 let ufoSize = 4;
-let ufoSpawnCooldown = 0, ufoSpawnDelayMin = fps * 20, ufoSpawnDelayMax = fps * 60;
+let ufoSpawnTimer = 0, ufoSpawnDelayMin = 20, ufoSpawnDelayMax = 60;
 let enemies = [];
 let numUFOs = 0;
 let numAsteroids = 0;
@@ -94,7 +94,6 @@ const initSoundFX = () => {
         asteroidExplosion: "assets/sfx/asteroid_explosion.mp3",
         gameOver: "assets/sfx/gameover_2.mp3",
         powerup: "assets/sfx/power_up.mp3",
-        // ufoFlying: "assets/sfx/ufo_flying_2.wav",
     });
 };
 
@@ -104,11 +103,10 @@ const initGame = () => {
     initInput();
     initSoundFX();
     ship = new Ship(gameCanvas.width / 2, gameCanvas.height / 2, true);
-    setInterval(gameLoop, 1000 / fps);
+    requestAnimationFrame(gameLoop);
 };
 
 const startGame = () => {
-    // reset game states
     powerups = [];
     enemies = [];
     explosions = [];
@@ -116,7 +114,7 @@ const startGame = () => {
     ship.reset();
     ship.beInvincible();
 
-    ufoSpawnCooldown = frameCount + (ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax);
+    ufoSpawnTimer = ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax;
 
     score = 0;
     updateScoreDisplay();
@@ -141,21 +139,23 @@ const togglePause = () => {
     }
 };
 
-const gameLoop = () => {   
+const gameLoop = (currentTime) => {
+    deltaTime = (currentTime - lastTime) / 1000;  // Calculate deltaTime in seconds
+    lastTime = currentTime;
+    
     handleGamepadInput();
     calculateMovementInputs();
 
     if (inputs.pause.down) { togglePause(); }
     
     if (gameState !== "pause") {
-        frameCount++;
-
         updateGame();
         drawGame();
         updateHighscore();
     }
 
     resetFrameInputs();
+    requestAnimationFrame(gameLoop);  // Continue the game loop
 };
 
 const updateGame = () => {
@@ -167,7 +167,6 @@ const updateGame = () => {
         }
     }
 
-    // remove dead objects
     rockets = rockets.filter(r => r.isAlive());
     enemies = enemies.filter(d => d.isAlive());
     explosions = explosions.filter(e => e.isAlive());
@@ -189,7 +188,6 @@ const updateGame = () => {
 
         if (checkCollision(ship.position.x, ship.position.y, ship.collisionRadius, p.position.x, p.position.y, p.collisionRadius)) {
             p.pickup(ship);
-
             soundFX.playSound("powerup");
         }
     }
@@ -197,7 +195,6 @@ const updateGame = () => {
     for (let r of rockets) {
         r.update();
 
-        // check for collisions with enemies
         for (let i = enemies.length - 1; i >= 0; i--) {
             let d = enemies[i];
             if (checkCollision(r.position.x, r.position.y, r.collisionRadius, d.position.x, d.position.y, d.collisionRadius)) {
@@ -205,7 +202,6 @@ const updateGame = () => {
                 d.hit();
                 addScore(d.hitScore);
 
-                // we destroyed the target, spawn a huuuuge explosion
                 if (!d.isAlive()) {
                     const explosion = new ParticleSystem(d.position.x, d.position.y);
                     for (let i = 0; i < 10; i++) {
@@ -227,27 +223,32 @@ const updateGame = () => {
         e.update();
     }
 
-    ship.move(inputHorizontal, inputVertical);
-    ship.update();
+    if (gameState === "game") {
+        ship.move(inputHorizontal, inputVertical);
+        ship.update();
 
-    if (!ship.disabled && !ship.dead && inputs.fire && frameCount > rocketShootCooldown) {
-        inputs.fire = false;
-        rocketShootCooldown = frameCount + rocketShootDelay;
+        rocketShootTimer -= deltaTime;
+        if (!ship.disabled && !ship.dead && inputs.fire && rocketShootTimer < 0) {
+            inputs.fire = false;
+            rocketShootTimer = rocketShootDelay;
+    
+            const newRockets = ship.shoot();
+            rockets.push(...newRockets);
+    
+            soundFX.playSound("shoot");
+        }
+    
+        asteroidSpawnTimer -= deltaTime;
+        if (numAsteroids < maxAsteroids && asteroidSpawnTimer < 0) {
+            spawnAsteroid();
+            asteroidSpawnTimer = asteroidSpawnDelay;
+        }
 
-        const newRockets = ship.shoot();
-        rockets.push(...newRockets);
-
-        soundFX.playSound("shoot");
-    }
-
-    if (numAsteroids < maxAsteroids && frameCount > asteroidSpawnCooldown) {
-        spawnAsteroid();
-        asteroidSpawnCooldown = frameCount + asteroidSpawnDelay;
-    }
-
-    if (gameState === "game" && numUFOs === 0 && frameCount > ufoSpawnCooldown) {
-        spawnUFO();
-        ufoSpawnCooldown = frameCount + (ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax);
+        ufoSpawnTimer -= deltaTime;
+        if (numUFOs === 0 && ufoSpawnTimer < 0) {
+            spawnUFO();
+            ufoSpawnTimer = ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax;
+        }
     }
 };
 

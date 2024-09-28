@@ -11,10 +11,6 @@ class SoundFX {
     }
 
     loadSFXClips(sfxClips) {
-        // sfxClips format:
-        // sfxClips = {
-        //     shoot: "assets/shoot.mp3"
-        // };
         if (!sfxClips && typeof sfxClips !== "object") {
             return;
         }
@@ -52,8 +48,7 @@ class SoundFX {
     }
 
     soundIsPlaying(clipName) {
-        return this.sfxClips[clipName]
-            && this.sfxClips[clipName].playing();
+        return this.sfxClips[clipName] && this.sfxClips[clipName].playing();
     }
 }
 // End of SoundFX
@@ -104,32 +99,29 @@ class Particle {
     }
 
     update() {
-        this.pos.add(this.vel);
-        this.lifespan -= 0.02;
+        const vel = this.vel.copy();
+        this.pos.add(vel.mult(deltaTime));
+        this.lifespan -= deltaTime;
     }
 
     draw(ctx) { }
 
     isDead() {
-        if (this.lifespan < 0) {
-            return true;
-        }
-        return false;
+        return this.lifespan < 0;
     }
 }
 
 class ExplosionParticle extends Particle {
     constructor(color) {
         super(color);
-
         this.vel = new Vector(getRandomFloat(-1, 1), getRandomFloat(-1, 1)).mult(2);
+        this.vel = this.vel.mult(60);
         this.theta = 0.0;
     }
 
     update() {
         super.update();
-
-        this.theta += (this.vel.x * this.vel.mag()) / 5.0;
+        this.theta += (this.vel.x * this.vel.mag()) / 650.0 * deltaTime;
     }
 
     draw(ctx) {
@@ -146,8 +138,8 @@ class ExplosionParticle extends Particle {
 class ShipExplosionParticle extends ExplosionParticle {
     constructor(color) {
         super(color);
-
         this.vel = new Vector(getRandomFloat(-1, 1), getRandomFloat(-1, 1)).mult(0.5);
+        this.vel = this.vel.mult(60);
     }
 
     draw(ctx) {
@@ -167,17 +159,16 @@ class ShipExplosionParticle extends ExplosionParticle {
 class TrailParticle extends Particle {
     constructor(color, forwardVector) {
         super(color);
-
         this.vel = new Vector(forwardVector.x, forwardVector.y).mult(-1);
         this.vel = this.vel.mult(0.5 + getRandomFloat(0, 2));
         this.vel = this.vel.add(new Vector(getRandomFloat(-0.5, 0.5), getRandomFloat(-0.5, 0.5)));
+        this.vel = this.vel.mult(60);
         this.theta = 0.0;
     }
 
     update() {
         super.update();
-
-        this.theta += (this.vel.x * this.vel.mag()) / 5.0;
+        this.theta += (this.vel.x * this.vel.mag()) / 65.0 * deltaTime;
     }
 
     draw(ctx) {
@@ -204,10 +195,10 @@ class Asteroid {
         }
 
         this.size = size;
-        this.moveSpeed = speed;
+        this.moveSpeed = speed * 60;
         this.angle = angle;
         this.rotationAngle = 0;
-        this.rotationSpeed = 0.1 + Math.random() * 1.25;
+        this.rotationSpeed = 0.1 + Math.random() * 1.25 * 60;
         this.splitted = false;
         this.stage = stage;
         this.hitScore = stage * 20;
@@ -217,47 +208,34 @@ class Asteroid {
     update() {
         const direction = new Vector(Math.cos((this.angle - 90) * Deg2Rad), Math.sin((this.angle - 90) * Deg2Rad));
         this.velocity = direction.normalize();
-        this.velocity.mult(this.moveSpeed);
+        this.velocity.mult(this.moveSpeed * deltaTime);
         this.position.add(this.velocity);
 
-        this.rotationAngle += this.rotationSpeed;
+        this.rotationAngle += this.rotationSpeed * deltaTime;
 
         this.checkBounds();
     }
 
     draw(ctx) {
         ctx.save();
-
         ctx.translate(this.position.x, this.position.y);
-
         ctx.rotate(this.rotationAngle * Deg2Rad);
-
         ctx.lineWidth = 2;
         ctx.strokeStyle = "white";
         ctx.fillStyle = "black";
 
         let eq = 360 / this.edges;
         ctx.beginPath();
-
         for (let i = 0 ; i <= this.edges; i++) {
             let deg = i * eq;
             let rad = deg * Deg2Rad;
-
             let x1 = this.pointRadiie[i] * Math.cos(rad);
             let y1 = this.pointRadiie[i] * Math.sin(rad);
-
             ctx.lineTo(x1, y1);
         }   
-
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
-
-        // ctx.strokeStyle = "red";
-        // ctx.beginPath();
-        // ctx.arc(0, 0, this.collisionRadius, 0, 2 * Math.PI);
-        // ctx.stroke();
-
         ctx.restore();
     }
 
@@ -272,8 +250,6 @@ class Asteroid {
     hit() {
         this.splitted = true;
 
-        // only split in two asteroids, if we are still big enough
-        // otherwise just disappear
         if (this.size >= 30) {
             AsteroidSpawner.spawnAsteroid(this.position.x, this.position.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
             AsteroidSpawner.spawnAsteroid(this.position.x, this.position.y, this.size * 0.6, 1 + ((this.stage + 1) * 0.5), Math.random() * 360, this.stage + 1);
@@ -290,14 +266,11 @@ class Asteroid {
 class SpecialAsteroid extends Asteroid {
     constructor(startX, startY, size, speed, angle, stage = 1) {
         super(startX, startY, size, speed, angle, stage);
-
         this.trailParticleSystem = new ParticleSystem(startX, startY);
     }
 
     update() {
         super.update();
-
-        // update trail particles
         this.trailParticleSystem.setOrigin(this.position.x, this.position.y);
         this.trailParticleSystem.addParticle(new TrailParticle("white", this.velocity));
         this.trailParticleSystem.update();
@@ -305,7 +278,6 @@ class SpecialAsteroid extends Asteroid {
 
     draw(ctx) {
         this.trailParticleSystem.draw(ctx);
-
         super.draw(ctx);
     }
 
@@ -320,8 +292,6 @@ class SpecialAsteroid extends Asteroid {
 
     hit() {
         this.splitted = true;
-
-        // spawn a pickup item
         PowerupSpawner.spawnRandomPowerup(this.position);
     }
 
@@ -352,8 +322,8 @@ class Rocket {
     constructor(startX, startY, speed, angle) {
         this.position = new Vector(startX, startY);
         this.angle = angle;
-        this.moveSpeed = speed;
-        this.lifetime = frameCount + fps;
+        this.moveSpeed = speed * 60;
+        this.lifetime = 1;
         this.size = 6;
         this.collisionRadius = this.size * 0.75;
         this.hitScore = 100;
@@ -362,33 +332,26 @@ class Rocket {
     update() {
         const direction = new Vector(Math.cos((this.angle - 90) * Deg2Rad), Math.sin((this.angle - 90) * Deg2Rad));
         const velocity = direction.normalize();
-        velocity.mult(this.moveSpeed);
+        velocity.mult(this.moveSpeed * deltaTime);
         this.position.add(velocity);
+
+        this.lifetime -= deltaTime;
 
         this.checkBounds();
     }
 
     draw(ctx) {
         ctx.save();
-
         ctx.translate(this.position.x, this.position.y);
-
         ctx.rotate(this.angle * Deg2Rad);
-
         ctx.lineWidth = 1;
         ctx.fillStyle = "white";
         ctx.fillRect(-(this.size / 2), -(this.size / 2), this.size, this.size);
-
-        // ctx.strokeStyle = "red";
-        // ctx.beginPath();
-        // ctx.arc(0, 0, this.collisionRadius, 0, 2 * Math.PI);
-        // ctx.stroke();
-
         ctx.restore();
     }
 
     isAlive() {
-        return frameCount < this.lifetime;
+        return this.lifetime > 0;
     }
 
     destroy() {
@@ -459,11 +422,11 @@ class UFO {
         this.size = size;
         this.collisionRadius = this.size * 2.5;
         this.dir = 1;
-        this.speed = 1.5 + Math.random() * 2.5;
+        this.speed = (1.5 + Math.random() * 2.5) * 60; 
         this.hitScore = 250;
         this.alive = true;
-        this.shootDelay = 60;
-        this.shootCooldown = frameCount + this.shootDelay;
+        this.shootDelay = 1;
+        this.shootTimer = this.shootDelay;
         this.ufoVertices = [
             { x: -2, y: -3 },
             { x: 2, y: -3 },
@@ -481,10 +444,8 @@ class UFO {
     }
 
     update() {
-        this.position.x += this.dir * this.speed;
-
+        this.position.x += this.dir * this.speed * deltaTime;
         this.shooting();
-
         this.checkBounds();
     }
 
@@ -495,42 +456,29 @@ class UFO {
         ctx.fillStyle = "black";
         ctx.strokeStyle = "white";
         ctx.lineWidth = 0.4;
-    
-        // center point
-        // ctx.fillRect(-0.5, -0.5, 1, 1);
-
         ctx.beginPath();
         for (let i = 1; i < this.ufoVertices.length; i++) {
             ctx.moveTo(this.ufoVertices[i].x, this.ufoVertices[i].y);
             ctx.lineTo(this.ufoVertices[i-1].x, this.ufoVertices[i-1].y);
         }
-        // center line
         ctx.moveTo(-7, 1);
         ctx.lineTo(7, 1);
-
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
-
-        // ctx.scale(1, 1);
-        // ctx.strokeStyle = "red";
-        // ctx.beginPath();
-        // ctx.arc(0, 0, this.collisionRadius, 0, 2 * Math.PI);
-        // ctx.stroke();
-
         ctx.restore();
     }
 
     shooting() {
-        if (this.inBounds() && frameCount > this.shootCooldown) {
-            this.shootCooldown = frameCount + this.shootDelay;
+        this.shootTimer -= deltaTime;
+        if (this.inBounds() && this.shootTimer < 0) {
+            this.shootTimer = this.shootDelay;
 
-            // calculate angle to player ship
             const deltaX = ship.position.x - this.position.x;
             const deltaY = ship.position.y - this.position.y;
             let headingAngle = Math.atan2(deltaY, deltaX);
-            headingAngle *= Rad2Deg; // convert to degrees
-            headingAngle += 90; // add 90 degrees offset
+            headingAngle *= Rad2Deg; 
+            headingAngle += 90;
 
             enemies.push(new Rocket(this.position.x, this.position.y, 5, headingAngle));
 
@@ -555,9 +503,8 @@ class UFO {
 
     hit() {
         this.alive = false;
-        ufoSpawnCooldown = frameCount + (ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax);
+        ufoSpawnTimer = ufoSpawnDelayMin + Math.random() * ufoSpawnDelayMax;
         soundFX.stopSound("ufoFlying");
-        
         PowerupSpawner.spawnRandomPowerup(this.position);
     }
 
@@ -573,8 +520,8 @@ class Ship {
         this.startPosition = new Vector(startX, startY);
         this.position = new Vector(startX, startY);
         this.angle = 0;
-        this.moveSpeed = 0.15;
-        this.rotationSpeed = 3;
+        this.moveSpeed = 6;
+        this.rotationSpeed = 180;
         this.acceleration = new Vector();
         this.velocity = new Vector();
         this.friction = 0.02;
@@ -584,13 +531,14 @@ class Ship {
         this.collisionRadius = this.size * 0.6;
         this.invincible = false;
         this.invincibleCooldown = 0;
-        this.invincibleDelay = fps * 3;
+        this.invincibleDelay = 3;
         this.flickerTimer = 0;
         this.flicker = true;
         this.dead = false;
         this.disabled = disabled;
         this.numProjectiles = 1;
         this.homing = false;
+        this.flameFlickerTimer = 0;
     }
 
     reset() {
@@ -617,12 +565,12 @@ class Ship {
 
     beInvincible() {
         this.invincible = true;
-        this.invincibleCooldown = frameCount + this.invincibleDelay;
+        this.invincibleCooldown = this.invincibleDelay;
     }
 
     move(inputHorizontal, inputVertical) {
         this.inputVertical = inputVertical;
-        this.angle += inputHorizontal * this.rotationSpeed;
+        this.angle += inputHorizontal * this.rotationSpeed * deltaTime;
 
         const direction = new Vector(Math.cos((this.angle - 90) * Deg2Rad), Math.sin((this.angle - 90) * Deg2Rad));
         this.acceleration = direction.normalize();
@@ -635,7 +583,7 @@ class Ship {
 
         if (this.numProjectiles > 1) {
             let spread = -30;
-            for (let i=0; i<this.numProjectiles; i++) {
+            for (let i = 0; i < this.numProjectiles; i++) {
                 if (this.homing) {
                     projectiles.push(new HomingRocket(this.position.x, this.position.y, 8, this.angle + spread));
                 } else {
@@ -658,11 +606,15 @@ class Ship {
     update() {
         if (this.dead || this.disabled) return;
 
-        if (frameCount > this.invincibleCooldown) {
-            this.invincible = false;
+        if (this.invincible) {
+            this.invincibleCooldown -= deltaTime;
+            this.flickerTimer += deltaTime;
+            if (this.invincibleCooldown <= 0) {
+                this.invincible = false;
+            }
         }
 
-        this.velocity.add(this.acceleration);
+        this.velocity.add(this.acceleration.mult(deltaTime));
         this.velocity.mult(1 - this.friction);
         this.position.add(this.velocity);
 
@@ -685,8 +637,8 @@ class Ship {
         ctx.lineWidth = 1;
 
         if (this.invincible) {
-            if (frameCount > this.flickerTimer + 5) {
-                this.flickerTimer = frameCount;
+            if (this.flickerTimer > 0.1) {
+                this.flickerTimer = 0;
                 this.flicker = !this.flicker;
             }
             ctx.strokeStyle = this.flicker ? "white" : "#888";
@@ -704,18 +656,15 @@ class Ship {
 
         this.drawEngineFlame(ctx);
 
-        // ctx.strokeStyle = "red";
-        // ctx.beginPath();
-        // ctx.arc(0, 0, this.collisionRadius, 0, 2 * Math.PI);
-        // ctx.stroke();
-
         ctx.restore();
     }
 
     drawEngineFlame(ctx) {
-        if (this.inputVertical !== 0 && frameCount % 5 === 0) {
+        this.flameFlickerTimer -= deltaTime;
+        if (this.inputVertical !== 0 && this.flameFlickerTimer < 0) {
             ctx.lineWidth = 2;
             ctx.strokeRect(-2.5, 10, 5, 4);
+            this.flameFlickerTimer = 0.07;
         }
     }
 
@@ -785,12 +734,13 @@ class Powerup {
         this.pickupTimer = 10;
         this.dead = false;
         this.player = null;
+        this.blinkTimer = 0;
     }
 
     update() {
-        this.theta += 0.05;
+        this.theta += 3 * deltaTime;
 
-        this.pickupTimer -= 1 / fps;
+        this.pickupTimer -= deltaTime;
         if (this.pickupTimer < 0) {
             this.dead = true;
         }
@@ -806,12 +756,14 @@ class Powerup {
 
         // blinking powerup
         if (this.pickupTimer < 5) {
+            this.blinkTimer += deltaTime;
             const minFrequency = 12;
             const blinkSpeed = minFrequency + this.pickupTimer * (20 / 5); 
-            const blink = Math.sin(frameCount / blinkSpeed) > 0 ? "white" : "gray";
+            const blink = Math.sin(this.blinkTimer / blinkSpeed) > 0 ? "white" : "gray";
             ctx.strokeStyle = blink;
         } else {
             ctx.strokeStyle = "white";
+            this.blinkTimer = 0;
         }
 
         ctx.lineWidth = 1;
@@ -838,7 +790,7 @@ class Powerup {
 class TimedPowerup extends Powerup {
     constructor(position, duration = 10) {
         super(position);
-        this.duration = fps * duration;
+        this.duration = duration;
         this.active = false;
     }
 
@@ -849,7 +801,7 @@ class TimedPowerup extends Powerup {
         super.update();
 
         if (this.active) {
-            this.duration--;
+            this.duration -= deltaTime;
             if (this.duration <= 0) {
                 this.active = false;
                 this.deactivated();
@@ -889,7 +841,7 @@ class HealthPowerup extends Powerup {
 // TripleShotPowerup
 class TripleShotPowerup extends TimedPowerup {
     constructor(position) {
-        super(position, 10);
+        super(position, 10);  // 10 seconds duration
     }
 
     activated() {
@@ -900,12 +852,12 @@ class TripleShotPowerup extends TimedPowerup {
         this.player.numProjectiles = 1;
     }
 }
-// End of TripleShotPickup
+// End of TripleShotPowerup
 
 // ShrinkPowerup
 class ShrinkPowerup extends TimedPowerup {
     constructor(position) {
-        super(position, 10);
+        super(position, 10);  // 10 seconds duration
     }
 
     activated() {
@@ -923,7 +875,7 @@ class ShrinkPowerup extends TimedPowerup {
 // HomingRocketsPowerup
 class HomingRocketsPowerup extends TimedPowerup {
     constructor(position) {
-        super(position, 10);
+        super(position, 10);  // 10 seconds duration
     }
 
     activated() {
