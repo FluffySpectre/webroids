@@ -377,29 +377,32 @@ class HomingRocket extends Rocket {
     constructor(startX, startY, speed, angle) {
         super(startX, startY, speed, angle);
         this.turnSpeed = 20;
+        this.target = null;
     }
 
     update() {
-        const target = this.findNearestEnemy();
-        if (target) {
-            this.adjustAngleTowards(target);
+        if (!this.target || !this.target.isAlive()) {
+            this.target = this.findNearestEnemy();
+        }
+        if (this.target && this.target.isAlive()) {
+            this.adjustAngleTowards(this.target);
         }
         super.update();
     }
 
     findNearestEnemy() {
-        let closestAsteroid = null;
+        let closestEnemy = null;
         let closestDistance = Infinity;
 
         for (let enemy of enemies) {
             const dist = this.position.dist(enemy.position);
             if (dist < closestDistance) {
                 closestDistance = dist;
-                closestAsteroid = enemy;
+                closestEnemy = enemy;
             }
         }
 
-        return closestAsteroid;
+        return closestEnemy;
     }
 
     adjustAngleTowards(target) {
