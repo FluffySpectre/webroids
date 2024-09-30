@@ -189,9 +189,18 @@ class Asteroid {
         this.position = new Vector(startX, startY);
         this.collisionRadius = size * 0.75;
         this.edges = parseInt(8 + Math.random() * 12);
-        this.pointRadiie = [];
+
+        this.calculatedPoints = [];
+        const eq = 360 / this.edges;
         for (let i = 0; i < this.edges; i++) {
-            this.pointRadiie.push((this.collisionRadius * 0.5) + Math.random() * (this.collisionRadius * 0.8));
+            const pointRadius = (this.collisionRadius * 0.5) + Math.random() * (this.collisionRadius * 0.8);
+
+            const deg = i * eq;
+            const rad = deg * Deg2Rad;
+            const x = pointRadius * Math.cos(rad);
+            const y = pointRadius * Math.sin(rad);
+
+            this.calculatedPoints.push({ x, y });
         }
 
         this.size = size;
@@ -223,16 +232,10 @@ class Asteroid {
         ctx.lineWidth = 2;
         ctx.strokeStyle = "white";
         ctx.fillStyle = "black";
-
-        let eq = 360 / this.edges;
         ctx.beginPath();
-        for (let i = 0 ; i <= this.edges; i++) {
-            let deg = i * eq;
-            let rad = deg * Deg2Rad;
-            let x1 = this.pointRadiie[i] * Math.cos(rad);
-            let y1 = this.pointRadiie[i] * Math.sin(rad);
-            ctx.lineTo(x1, y1);
-        }   
+        for (let p of this.calculatedPoints) {
+            ctx.lineTo(p.x, p.y);
+        }
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
@@ -791,6 +794,7 @@ class Powerup {
 }
 // End of Powerup
 
+// TimedPowerup
 class TimedPowerup extends Powerup {
     constructor(position, duration = 10) {
         super(position);
@@ -841,6 +845,7 @@ class TimedPowerup extends Powerup {
         return this.active || (!this.dead && !this.pickedUp);
     }
 }
+// End of TimedPowerup
 
 // HealthPowerup
 class HealthPowerup extends Powerup {
