@@ -574,7 +574,7 @@ class Ship {
         this.dead = false;
         this.disabled = disabled;
         this.numProjectiles = 1;
-        this.homing = false;
+        this.projectile = Rocket;
         this.flameFlickerTimer = 0;
         this.activePowerups = {};
     }
@@ -590,7 +590,7 @@ class Ship {
         this.numProjectiles = 1;
         this.collisionRadius = this.size * 0.6;
         this.scale = 2;
-        this.homing = false;
+        this.projectile = Rocket;
     }
 
     canBeHit() {
@@ -622,20 +622,12 @@ class Ship {
         if (this.numProjectiles > 1) {
             let spread = -30;
             for (let i = 0; i < this.numProjectiles; i++) {
-                if (this.homing) {
-                    projectiles.push(new HomingRocket(this.position.x, this.position.y, 8, this.angle + spread));
-                } else {
-                    projectiles.push(new Rocket(this.position.x, this.position.y, 8, this.angle + spread));
-                }
+                projectiles.push(new this.projectile(this.position.x, this.position.y, 8, this.angle + spread));
                 spread += 30;
             }
         }
         else {
-            if (this.homing) {
-                projectiles.push(new HomingRocket(this.position.x, this.position.y, 8, this.angle));
-            } else {
-                projectiles.push(new Rocket(this.position.x, this.position.y, 8, this.angle));
-            }
+            projectiles.push(new this.projectile(this.position.x, this.position.y, 8, this.angle));
         }
 
         return projectiles;
@@ -940,13 +932,13 @@ class HomingRocketsPowerup extends TimedPowerup {
     }
 
     activated() {
-        this.player.homing = true;
+        this.player.projectile = HomingRocket;
     }
 
     deactivated() {
         super.deactivated();
 
-        this.player.homing = false;
+        this.player.projectile = Rocket;
     }
 }
 // End of HomingRocketsPowerup
