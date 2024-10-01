@@ -428,6 +428,7 @@ class UFO {
         this.size = size;
         this.collisionRadius = this.size * 2.5;
         this.dir = 1;
+        this.dirY = 0;
         this.speed = (1.5 + Math.random() * 2.5) * 60; 
         this.hitScore = 250;
         this.alive = true;
@@ -446,11 +447,39 @@ class UFO {
         ];
         this.explosionSound = "ufoExplosion";
 
+        this.changeYDirectionTimer = 0;
+        this.nextYDirChange = 0.5 + Math.random() * 1.0;
+
         soundFX.playSound("ufoFlying", true);
     }
 
-    update() {
+    moveBehaviour() {
         this.position.x += this.dir * this.speed * deltaTime;
+        this.position.y += this.dirY * this.speed * deltaTime;
+
+        this.changeYDirectionTimer += deltaTime;
+        if (this.changeYDirectionTimer > this.nextYDirChange) {
+            this.changeYDirectionTimer = 0;
+            this.nextYDirChange = 0.5 + Math.random() * 1.0;
+
+            if (this.position.y < gameCanvas.height / 2) {
+                this.dirY = Math.random() < 0.5 ? 1 : 0;
+            } else {
+                this.dirY = Math.random() < 0.5 ? -1 : 0;
+            }
+
+            // change direction based on the player ship
+            // if (this.position.y < ship.position.y) {
+            //     this.dirY = 1;
+            // }
+            // else {
+            //     this.dirY = -1;
+            // }
+        }
+    }
+
+    update() {
+        this.moveBehaviour();
         this.shooting();
         this.checkBounds();
     }
@@ -500,10 +529,12 @@ class UFO {
         if (this.position.x + this.size * 10 < 0) {
             this.position.y = this.size + Math.random() * (gameCanvas.height - this.size * 2);
             this.dir *= -1;
+            this.dirY = 0;
         }
         else if (this.position.x > gameCanvas.width + this.size * 10) {
             this.position.y = this.size + Math.random() * (gameCanvas.height - this.size * 2);
             this.dir *= -1;
+            this.dirY = 0;
         }
     }
 

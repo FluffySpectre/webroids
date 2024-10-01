@@ -140,7 +140,7 @@ const togglePause = () => {
 };
 
 const gameLoop = (currentTime) => {
-    deltaTime = (currentTime - lastTime) / 1000;  // Calculate deltaTime in seconds
+    deltaTime = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
     
     handleGamepadInput();
@@ -155,7 +155,7 @@ const gameLoop = (currentTime) => {
     }
 
     resetFrameInputs();
-    requestAnimationFrame(gameLoop);  // Continue the game loop
+    requestAnimationFrame(gameLoop);
 };
 
 const updateGame = () => {
